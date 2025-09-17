@@ -1,0 +1,266 @@
+@model product_catalog_app.src.models.Product
+
+<!-- Pazaryeri Barkodları -->
+<div class="form-section collapsible" id="barcodes-section">
+    <div class="section-header">
+        <h2><i class="fas fa-barcode"></i> Pazaryeri Barkodları <i class="fas fa-chevron-down toggle-icon"></i></h2>
+    </div>
+    
+    <div class="form-content collapsible-content">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="TrendyolBarcode">Trendyol Barkodu</label>
+                <input type="text" id="TrendyolBarcode" name="TrendyolBarcode" class="form-control" 
+                       placeholder="Trendyol barkodu" 
+                       value="@Model.TrendyolBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="HepsiburadaBarcode">Hepsiburada Barkodu</label>
+                <input type="text" id="HepsiburadaBarcode" name="HepsiburadaBarcode" class="form-control" 
+                       placeholder="Hepsiburada barkodu" 
+                       value="@Model.HepsiburadaBarcode" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="HepsiburadaSellerStockCode">Hepsiburada Satıcı Stok Kodu</label>
+                <input type="text" id="HepsiburadaSellerStockCode" name="HepsiburadaSellerStockCode" class="form-control" 
+                       placeholder="Hepsiburada satıcı stok kodu" 
+                       value="@Model.HepsiburadaSellerStockCode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="HepsiburadaTedarikBarcode">Hepsiburada Tedarik Barkodu</label>
+                <input type="text" id="HepsiburadaTedarikBarcode" name="HepsiburadaTedarikBarcode" class="form-control" 
+                       placeholder="Hepsiburada tedarik barkodu" 
+                       value="@Model.HepsiburadaTedarikBarcode" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="KoctasBarcode">Koçtaş Barkodu</label>
+                <input type="text" id="KoctasBarcode" name="KoctasBarcode" class="form-control" 
+                       placeholder="Koçtaş barkodu" 
+                       value="@Model.KoctasBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="KoctasIstanbulBarcode">Koçtaş İstanbul Barkodu</label>
+                <input type="text" id="KoctasIstanbulBarcode" name="KoctasIstanbulBarcode" class="form-control" 
+                       placeholder="Koçtaş İstanbul barkodu" 
+                       value="@Model.KoctasIstanbulBarcode" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="KoctasEanBarcode">Koçtaş EAN Barkodu</label>
+                <input type="text" id="KoctasEanBarcode" name="KoctasEanBarcode" class="form-control" 
+                       placeholder="Koçtaş EAN barkodu" 
+                       value="@Model.KoctasEanBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="KoctasEanIstanbulBarcode">Koçtaş EAN İstanbul Barkodu</label>
+                <input type="text" id="KoctasEanIstanbulBarcode" name="KoctasEanIstanbulBarcode" class="form-control" 
+                       placeholder="Koçtaş EAN İstanbul barkodu" 
+                       value="@Model.KoctasEanIstanbulBarcode" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="PttAvmBarcode">PTT AVM Barkodu</label>
+                <input type="text" id="PttAvmBarcode" name="PttAvmBarcode" class="form-control" 
+                       placeholder="PTT AVM barkodu" 
+                       value="@Model.PttAvmBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="PttUrunStokKodu">PTT Ürün ID</label>
+                <input type="text" id="PttUrunStokKodu" name="PttUrunStokKodu" class="form-control" 
+                       placeholder="PTT ürün ID" 
+                       value="@Model.PttUrunStokKodu" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="PazaramaBarcode">Pazarama Barkodu</label>
+                <input type="text" id="PazaramaBarcode" name="PazaramaBarcode" class="form-control" 
+                       placeholder="Pazarama barkodu" 
+                       value="@Model.PazaramaBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="EntegraBarkod">Entegra Barkod</label>
+                <input type="text" id="EntegraBarkod" name="EntegraBarkod" class="form-control" 
+                       placeholder="Entegra barkod" 
+                       value="@Model.EntegraBarkod" />
+            </div>
+        </div>
+
+        <!-- Entegra Diğer Alanları -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="EntegraUrunId">Entegra Ürün ID</label>
+                <input type="text" id="EntegraUrunId" name="EntegraUrunId" class="form-control" 
+                       placeholder="Entegra ürün ID" 
+                       value="@Model.EntegraUrunId" />
+            </div>
+            
+            <div class="form-group">
+                <label for="EntegraUrunKodu">Entegra Ürün Kodu</label>
+                <input type="text" id="EntegraUrunKodu" name="EntegraUrunKodu" class="form-control" 
+                       placeholder="Entegra ürün kodu" 
+                       value="@Model.EntegraUrunKodu" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="HaceyapiBarcode">Haceyapı Barkodu</label>
+                <input type="text" id="HaceyapiBarcode" name="HaceyapiBarcode" class="form-control" 
+                       placeholder="Haceyapı barkodu" 
+                       value="@Model.HaceyapiBarcode" />
+            </div>
+            
+            <div class="form-group">
+                <label for="AmazonBarcode">Amazon Barkodu</label>
+                <input type="text" id="AmazonBarcode" name="AmazonBarcode" class="form-control" 
+                       placeholder="Amazon barkodu" 
+                       value="@Model.AmazonBarcode" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="N11CatalogId">N11 Katalog ID</label>
+                <input type="text" id="N11CatalogId" name="N11CatalogId" class="form-control" 
+                       placeholder="N11 katalog ID" 
+                       value="@Model.N11CatalogId" />
+            </div>
+            
+            <div class="form-group">
+                <label for="N11ProductCode">N11 Ürün Kodu</label>
+                <input type="text" id="N11ProductCode" name="N11ProductCode" class="form-control" 
+                       placeholder="N11 ürün kodu" 
+                       value="@Model.N11ProductCode" />
+            </div>
+        </div>
+
+        <!-- Yedek Barkod Alanları -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="SpareBarcode1">Yedek Pazaryeri Barkodu 1</label>
+                <input type="text" id="SpareBarcode1" name="SpareBarcode1" class="form-control" 
+                       placeholder="1. yedek barkod" 
+                       value="@Model.SpareBarcode1" />
+            </div>
+            
+            <div class="form-group">
+                <label for="SpareBarcode2">Yedek Pazaryeri Barkodu 2</label>
+                <input type="text" id="SpareBarcode2" name="SpareBarcode2" class="form-control" 
+                       placeholder="2. yedek barkod" 
+                       value="@Model.SpareBarcode2" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="SpareBarcode3">Yedek Pazaryeri Barkodu 3</label>
+                <input type="text" id="SpareBarcode3" name="SpareBarcode3" class="form-control" 
+                       placeholder="3. yedek barkod" 
+                       value="@Model.SpareBarcode3" />
+            </div>
+            
+            <div class="form-group">
+                <label for="SpareBarcode4">Yedek Pazaryeri Barkodu 4</label>
+                <input type="text" id="SpareBarcode4" name="SpareBarcode4" class="form-control" 
+                       placeholder="4. yedek barkod" 
+                       value="@Model.SpareBarcode4" />
+            </div>
+        </div>
+
+        <!-- Logo Barkodları -->
+        <div class="logo-barcodes-section">
+            <div class="form-group-header">
+                <h3><i class="fas fa-tags"></i> Logo Barkodları</h3>
+                <p class="section-description">153.12.312.17 formatında logo barkodları ekleyin (maksimum 10 adet)</p>
+            </div>
+            
+            <div id="logo-barcode-inputs" class="logo-barcode-container">
+                @{
+                    var existingLogoBarcodes = new List<string>();
+                    if (!string.IsNullOrEmpty(Model.LogoBarcodes))
+                    {
+                        try
+                        {
+                            // Önce virgülle ayrılmış format (yeni standard)
+                            if (Model.LogoBarcodes.Contains(","))
+                            {
+                                existingLogoBarcodes = Model.LogoBarcodes.Split(',')
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .Select(x => x.Trim())
+                                    .ToList();
+                            }
+                            // JSON format için backward compatibility
+                            else if (Model.LogoBarcodes.Trim().StartsWith("["))
+                            {
+                                existingLogoBarcodes = System.Text.Json.JsonSerializer.Deserialize<List<string>>(Model.LogoBarcodes) ?? new List<string>();
+                            }
+                            else
+                            {
+                                // Tek değer veya satır satır ayrılmış format
+                                existingLogoBarcodes = Model.LogoBarcodes.Split('\n', '\r')
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .Select(x => x.Trim())
+                                    .ToList();
+                            }
+                        }
+                        catch
+                        {
+                            // Hata durumunda boş liste
+                            existingLogoBarcodes = new List<string>();
+                        }
+                    }
+                }
+
+                @for (int i = 0; i < Math.Max(1, existingLogoBarcodes.Count); i++)
+                {
+                    <div class="barcode-input-group">
+                        <label>@(i + 1). Logo Barkodu</label>
+                        <div class="barcode-input-wrapper">
+                            <input type="text" 
+                                   name="LogoBarcode_@(i + 1)" 
+                                   class="form-control barcode-input" 
+                                   placeholder="Logo barkodu girin (örn: 153.01.25.694)"
+                                   value="@(i < existingLogoBarcodes.Count ? existingLogoBarcodes[i] : "")"
+                                   pattern="[0-9]+(\.[0-9]+)*"
+                                   title="Sadece rakam ve nokta kullanın (örn: 153.01.25.694)" />
+                            @if (i > 0)
+                            {
+                                <button type="button" class="btn-remove" data-action="remove-logo-barcode">
+                                    <i class="fas fa-trash"></i> Sil
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <div class="logo-barcode-actions">
+                <button type="button" id="add-logo-barcode-btn" class="btn btn-outline">
+                    <i class="fas fa-plus"></i> Logo Barkodu Ekle
+                </button>
+                <small class="form-help">En fazla 10 adet logo barkodu ekleyebilirsiniz</small>
+            </div>
+            
+            <!-- Hidden field to store JSON data -->
+            <input type="hidden" id="LogoBarcodes" name="LogoBarcodes" value="@Model.LogoBarcodes" />
+        </div>
+    </div>
+</div>

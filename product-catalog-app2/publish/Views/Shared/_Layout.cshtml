@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>@ViewData["Title"] - Hace Yapı Malzemeleri Ürün Kataloğu</title>
+    <!-- Favicon - Multiple formats for better compatibility -->
+    <link rel="icon" type="image/svg+xml" href="~/images/hace_logo_siyah.svg" />
+    <link rel="icon" type="image/png" href="~/images/hace_logo_siyah.png" />
+    <link rel="shortcut icon" href="~/images/hace_logo_siyah.svg" />
+    
+    <!-- UNIFIED CSS - Single clean file, no conflicts -->
+    <link rel="stylesheet" href="~/css/styles.css?v=2.6.0&t=@DateTime.UtcNow.Ticks" />
+    
+    <!-- Font Awesome - Synchronous loading to prevent FOUC -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    
+    <!-- Sayfa özgü stiller - Main CSS'den sonra -->
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <a href="/" title="Ana Sayfa">
+                    <div class="brand-text">
+                        <span class="brand-name">Hace Yapı Malzemeleri</span>
+                    </div>
+                </a>
+            </div>
+            
+            <!-- Ana menü -->
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Product" ? "active" : "")">🏠 Ana Sayfa</a></li>
+                <li><a href="/Product/CreateProduct" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "CreateProduct" ? "active" : "")">➕ Ürün Ekle</a></li>
+                <li><a href="/Product/Archive" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Archive" ? "active" : "")">📁 Arşiv</a></li>
+                <li><a href="/Category" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")" title="Kategori Yönetimi">🏷️ Kategoriler</a></li>
+                <li><a href="/Product/XmlManager" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "XmlManager" ? "active" : "")">📊 İçe/Dışa Aktarma</a></li>
+            </ul>
+            
+            <!-- Mobil menü butonu -->
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="~/images/hace_logo_siyah.svg" alt="Hace Logo" class="footer-logo" onerror="this.src='~/images/hace_logo_siyah.png'" />
+                <div class="footer-text">
+                    <h3>Hace Yapı Malzemeleri</h3>
+                    <p>Kaliteli yapı malzemeleri ve güvenilir hizmet</p>
+                </div>
+            </div>
+            <div class="footer-info">
+                <p>&copy; 2025 - Hace Yapı Malzemeleri Ürün Kataloğu</p>
+                <p>Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- TempData Notifications - Hidden containers for JavaScript processing -->
+    @if (TempData["Success"] != null)
+    {
+        <div data-tempdata="Success" style="display: none;">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div data-tempdata="Error" style="display: none;">@TempData["Error"]</div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div data-tempdata="Warning" style="display: none;">@TempData["Warning"]</div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div data-tempdata="Info" style="display: none;">@TempData["Info"]</div>
+    }
+
+    <!-- Core Scripts - Optimized Loading Order -->
+    <!-- 1. Navigation (defer for non-critical) -->
+    <script defer src="~/js/navbar-simple.js?v=2.6.0&t=@DateTime.UtcNow.Ticks"></script>
+    
+    <!-- 2. Critical: Notification System (immediate load for user feedback) -->
+    <script src="~/js/notification-system.js?v=2.7.0&t=@DateTime.UtcNow.Ticks"></script>
+    
+    <!-- 3. Optimized TempData Handler -->
+    <script>
+    (function() {
+        'use strict';
+        
+        // Wait for DOM and notification system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verify notification system is ready
+            if (!window.notificationSystem) {
+                console.warn('⚠️ NotificationSystem not ready, retrying...');
+                setTimeout(arguments.callee, 100);
+                return;
+            }
+            
+            console.log('✅ NotificationSystem ready for TempData processing');
+            
+            // Process TempData notifications efficiently
+            const tempDataElements = document.querySelectorAll('[data-tempdata]');
+            if (tempDataElements.length === 0) return;
+            
+            const titleMap = {
+                'success': '✅ Başarılı',
+                'error': '❌ Hata', 
+                'warning': '⚠️ Uyarı',
+                'info': 'ℹ️ Bilgi'
+            };
+            
+            tempDataElements.forEach(element => {
+                const type = element.getAttribute('data-tempdata').toLowerCase();
+                const message = element.textContent.trim();
+                
+                if (message && window.notificationSystem[type]) {
+                    window.notificationSystem[type](
+                        titleMap[type] || 'Bildirim', 
+                        message, 
+                        {
+                            duration: type === 'error' ? 8000 : 5000,
+                            position: 'top-right'
+                        }
+                    );
+                    
+                    console.log(`📢 TempData ${type}: ${message.substring(0, 50)}...`);
+                }
+            });
+        });
+        
+        // Cache management - prevent stale content
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                console.log('� Cached page detected, refreshing...');
+                location.reload(true);
+            }
+        });
+    })();
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

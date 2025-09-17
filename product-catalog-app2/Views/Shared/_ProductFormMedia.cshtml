@@ -1,0 +1,241 @@
+@model product_catalog_app.src.models.Product
+
+@functions {
+    private static readonly System.Text.RegularExpressions.Regex YoutubeRegex = 
+        new System.Text.RegularExpressions.Regex(@"(?:v=|\/)([a-zA-Z0-9_-]{11})", 
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+    
+    private static readonly System.Text.RegularExpressions.Regex VimeoRegex = 
+        new System.Text.RegularExpressions.Regex(@"(?:vimeo\.com/)(\d+)", 
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+    
+    public string GetVideoEmbed(string videoUrl)
+    {
+        if (string.IsNullOrEmpty(videoUrl)) return "";
+        
+        // YouTube video - Optimized with precompiled regex
+        if (videoUrl.Contains("youtube.com") || videoUrl.Contains("youtu.be"))
+        {
+            var match = YoutubeRegex.Match(videoUrl);
+            if (match.Success)
+            {
+                var videoId = match.Groups[1].Value;
+                return $"<iframe width='200' height='150' src='https://www.youtube.com/embed/{videoId}' frameborder='0' allowfullscreen loading='lazy'></iframe>";
+            }
+        }
+        
+        // Vimeo video - Optimized with precompiled regex  
+        if (videoUrl.Contains("vimeo.com"))
+        {
+            var match = VimeoRegex.Match(videoUrl);
+            if (match.Success)
+            {
+                return $"<iframe src='https://player.vimeo.com/video/{match.Groups[1].Value}' width='200' height='150' frameborder='0' allowfullscreen loading='lazy'></iframe>";
+            }
+        }
+        
+        // Direct video file - Performance optimized extension check
+        var lowerUrl = videoUrl.ToLowerInvariant();
+        if (lowerUrl.EndsWith(".mp4") || lowerUrl.EndsWith(".webm") || lowerUrl.EndsWith(".ogg"))
+        {
+            var extension = System.IO.Path.GetExtension(lowerUrl).TrimStart('.');
+            return $"<video width='200' height='150' controls preload='metadata'><source src='{videoUrl}' type='video/{extension}'></video>";
+        }
+        
+        return $"<p>Video URL: <a href='{videoUrl}' target='_blank' rel='noopener'>{videoUrl}</a></p>";
+    }
+}
+
+<!-- Ürün Medyaları (Görseller ve Videolar) -->
+<div class="form-section collapsible" id="media-section">
+    <div class="section-header">
+        <h2><i class="fas fa-images"></i> Ürün Medyaları <i class="fas fa-chevron-down toggle-icon"></i></h2>
+        <p class="section-description">URL'lerden ürün görselleri ve videoları ekleyin</p>
+    </div>
+    
+    <div class="form-content collapsible-content">
+        <!-- Compact Media Section - Show only first 3 of each type by default -->
+        <div class="media-compact">
+            <!-- Pazaryeri Görselleri (Kompakt - 3 adet) -->
+            <div class="media-group">
+                <h3><i class="fas fa-store"></i> Pazaryeri Görselleri (İlk 3)</h3>
+                <p class="media-description">Ana pazaryeri görselleri</p>
+                
+                <div class="media-inputs-grid">
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="media-input-group">
+                            <label>Pazaryeri Görsel @(i + 1)</label>
+                            <input type="url" 
+                                   name="MarketplaceImageUrls[@i]" 
+                                   class="form-control media-input" 
+                                   placeholder="https://example.com/marketplace-image@(i + 1).jpg"
+                                   value="@(Model.MarketplaceImageUrls?.ElementAtOrDefault(i) ?? "")"
+                                   data-preview-target="marketplace-preview-@i" />
+                            <div class="media-preview" id="marketplace-preview-@i">
+                                @if (Model.MarketplaceImageUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.MarketplaceImageUrls[i]))
+                                {
+                                    <img src="@Model.MarketplaceImageUrls[i]" 
+                                         alt="Pazaryeri Görsel @(i + 1)" 
+                                         class="img-clean" />
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <button type="button" class="btn btn-outline" data-action="toggle-media" data-media-type="marketplace">
+                    <span id="marketplace-toggle-text">7 Görsel Daha Ekle</span>
+                    <i class="fas fa-chevron-down" id="marketplace-toggle-icon"></i>
+                </button>
+                
+                <!-- Additional marketplace images (hidden by default) -->
+                <div id="marketplace-additional" class="media-additional hidden">
+                    <div class="media-inputs-grid">
+                        @for (int i = 3; i < 10; i++)
+                        {
+                            <div class="media-input-group">
+                                <label>Pazaryeri Görsel @(i + 1)</label>
+                                <input type="url" 
+                                       name="MarketplaceImageUrls[@i]" 
+                                       class="form-control media-input" 
+                                       placeholder="https://example.com/marketplace-image@(i + 1).jpg"
+                                       value="@(Model.MarketplaceImageUrls?.ElementAtOrDefault(i) ?? "")"
+                                       data-preview-target="marketplace-preview-@i" />
+                                <div class="media-preview" id="marketplace-preview-@i">                            @if (Model.MarketplaceImageUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.MarketplaceImageUrls[i]))
+                            {
+                                <img src="@Model.MarketplaceImageUrls[i]" 
+                                     alt="Pazaryeri Görsel @(i + 1)" 
+                                     class="img-clean" />
+                            }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Görselleri (Kompakt - 3 adet) -->
+            <div class="media-group">
+                <h3><i class="fas fa-camera"></i> Ürün Görselleri (İlk 3)</h3>
+                <p class="media-description">Ana ürün görselleri</p>
+                
+                <div class="media-inputs-grid">
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <div class="media-input-group">
+                            <label>Ürün Görsel @(i + 1)</label>
+                            <input type="url" 
+                                   name="ImageUrls[@i]" 
+                                   class="form-control media-input" 
+                                   placeholder="https://example.com/product-image@(i + 1).jpg"
+                                   value="@(Model.ImageUrls?.ElementAtOrDefault(i) ?? "")"
+                                   data-preview-target="real-preview-@i" />
+                            <div class="media-preview" id="real-preview-@i">
+                                @if (Model.ImageUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.ImageUrls[i]))
+                                {
+                                    <img src="@Model.ImageUrls[i]" 
+                                         alt="Ürün Görsel @(i + 1)" 
+                                         class="img-clean" />
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <button type="button" class="btn btn-outline" data-action="toggle-media" data-media-type="product">
+                    <span id="product-toggle-text">7 Görsel Daha Ekle</span>
+                    <i class="fas fa-chevron-down" id="product-toggle-icon"></i>
+                </button>
+                
+                <!-- Additional product images (hidden by default) -->
+                <div id="product-additional" class="media-additional hidden">
+                    <div class="media-inputs-grid">
+                        @for (int i = 3; i < 10; i++)
+                        {
+                            <div class="media-input-group">
+                                <label>Ürün Görsel @(i + 1)</label>
+                                <input type="url" 
+                                       name="ImageUrls[@i]" 
+                                       class="form-control media-input" 
+                                       placeholder="https://example.com/product-image@(i + 1).jpg"
+                                       value="@(Model.ImageUrls?.ElementAtOrDefault(i) ?? "")"
+                                       data-preview-target="real-preview-@i" />
+                                <div class="media-preview" id="real-preview-@i">
+                                    @if (Model.ImageUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.ImageUrls[i]))
+                                    {
+                                        <img src="@Model.ImageUrls[i]" 
+                                             alt="Ürün Görsel @(i + 1)" 
+                                             class="img-clean" />
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Videoları (Kompakt - 2 adet) -->
+            <div class="media-group">
+                <h3><i class="fas fa-video"></i> Ürün Videoları (İlk 2)</h3>
+                <p class="media-description">YouTube, Vimeo veya doğrudan video URL'leri</p>
+                
+                <div class="media-inputs-grid">
+                    @for (int i = 0; i < 2; i++)
+                    {
+                        <div class="media-input-group">
+                            <label>Ürün Video @(i + 1)</label>
+                            <input type="url" 
+                                   name="VideoUrls[@i]" 
+                                   class="form-control media-input video-input" 
+                                   placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
+                                   value="@(Model.VideoUrls?.ElementAtOrDefault(i) ?? "")"
+                                   data-preview-target="video-preview-@i" />
+                            <div class="media-preview video-preview" id="video-preview-@i">
+                                @if (Model.VideoUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.VideoUrls[i]))
+                                {
+                                    <div class="video-embed">
+                                        @Html.Raw(GetVideoEmbed(Model.VideoUrls[i]))
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <button type="button" class="btn btn-outline" data-action="toggle-media" data-media-type="video">
+                    <span id="video-toggle-text">3 Video Daha Ekle</span>
+                    <i class="fas fa-chevron-down" id="video-toggle-icon"></i>
+                </button>
+                
+                <!-- Additional videos (hidden by default) -->
+                <div id="video-additional" class="media-additional hidden">
+                    <div class="media-inputs-grid">
+                        @for (int i = 2; i < 5; i++)
+                        {
+                            <div class="media-input-group">
+                                <label>Ürün Video @(i + 1)</label>
+                                <input type="url" 
+                                       name="VideoUrls[@i]" 
+                                       class="form-control media-input video-input" 
+                                       placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
+                                       value="@(Model.VideoUrls?.ElementAtOrDefault(i) ?? "")"
+                                       data-preview-target="video-preview-@i" />
+                                <div class="media-preview video-preview" id="video-preview-@i">
+                                    @if (Model.VideoUrls?.ElementAtOrDefault(i) != null && !string.IsNullOrEmpty(Model.VideoUrls[i]))
+                                    {
+                                        <div class="video-embed">
+                                            @Html.Raw(GetVideoEmbed(Model.VideoUrls[i]))
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>

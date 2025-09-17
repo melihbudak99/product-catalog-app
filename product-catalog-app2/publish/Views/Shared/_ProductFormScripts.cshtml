@@ -1,0 +1,702 @@
+@* ============================================= *@
+@* PROFESSIONAL PRODUCT FORM SCRIPTS - V2.0    *@
+@* CLEAN, MODULAR, PRODUCTION-READY            *@
+@* ============================================= *@
+
+<!-- Essential Scripts -->
+<script src="~/js/rich-text-editor.js"></script>
+<script src="~/js/app.js"></script>
+<!-- Unsaved Changes Detection System -->
+<script src="~/js/unsaved-changes.js"></script>
+
+<script>
+(function() {
+    'use strict';
+    
+    // ===== PROFESSIONAL INITIALIZATION =====
+    let formSystemsInitialized = false;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (formSystemsInitialized) return;
+        formSystemsInitialized = true;
+        
+        // Initialize all systems
+        FormSystem.init();
+        
+        // Initialize managers after DOM is ready
+        setTimeout(() => {
+            // Create and initialize LogoBarcodeManager
+            window.logoBarcodeManager = new LogoBarcodeManager();
+            window.logoBarcodeManager.init();
+            
+            // Create and initialize ProductFormEventManager  
+            window.productFormEventManager = new ProductFormEventManager();
+            window.productFormEventManager.init();
+            
+        }, 100);
+    });
+    
+    // ===== MAIN FORM SYSTEM MODULE =====
+    const FormSystem = {
+        init() {
+            this.initCollapsible();
+            this.initRichTextEditor();
+            this.initValidation();
+            this.initConfirmation();
+            // Keyboard shortcuts handled by UnsavedChangesManager - avoiding conflicts
+            this.suppressAmateur();
+        },
+        
+        // Collapsible sections with smooth animations
+        initCollapsible() {
+            const sections = document.querySelectorAll('.form-section.collapsible');
+            if (!sections.length) return;
+            
+            sections.forEach(section => {
+                const content = section.querySelector('.collapsible-content');
+                const header = section.querySelector('.section-header');
+                const icon = header?.querySelector('.toggle-icon');
+                
+                if (!content || !header) return;
+                
+                // Set initial state
+                const isOpen = content.classList.contains('show');
+                this.setCollapsibleState(content, header, icon, isOpen);
+                
+                // Add click handler
+                header.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const isExpanded = content.classList.contains('expanded');
+                    this.toggleCollapsible(content, header, icon, !isExpanded);
+                });
+            });
+        },
+        
+        setCollapsibleState(content, header, icon, isOpen) {
+            if (isOpen) {
+                content.style.display = 'block';
+                content.classList.add('expanded');
+                header.classList.add('active');
+                if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                content.classList.remove('expanded');
+                header.classList.remove('active');
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        },
+        
+        toggleCollapsible(content, header, icon, expand) {
+            if (expand) {
+                // Open animation
+                content.style.display = 'block';
+                content.style.maxHeight = '0';
+                content.style.opacity = '0';
+                
+                requestAnimationFrame(() => {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                    content.style.opacity = '1';
+                });
+                
+                setTimeout(() => {
+                    content.style.maxHeight = 'none';
+                    content.classList.add('expanded', 'show');
+                }, 400);
+                
+                header.classList.add('active');
+                if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+                // Close animation
+                content.style.maxHeight = content.scrollHeight + 'px';
+                
+                requestAnimationFrame(() => {
+                    content.style.maxHeight = '0';
+                    content.style.opacity = '0';
+                });
+                
+                setTimeout(() => {
+                    content.style.display = 'none';
+                    content.classList.remove('expanded', 'show');
+                }, 400);
+                
+                header.classList.remove('active');
+                if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+        },
+        
+        // Rich text editor initialization
+        initRichTextEditor() {
+            setTimeout(() => {
+                if (typeof window.initializeRichTextEditor === 'function') {
+                    try {
+                        window.initializeRichTextEditor();
+                    } catch (error) {
+                        console.warn('RichTextEditor initialization failed:', error);
+                    }
+                }
+            }, 200);
+        },
+        
+        // Form validation
+        initValidation() {
+            const form = document.getElementById('productForm');
+            if (!form) return;
+            
+            // Initialize uniqueness validation
+            this.initUniquenessValidation();
+        },
+        
+        initUniquenessValidation() {
+            const inputs = document.querySelectorAll('.uniqueness-check');
+            const timeouts = {};
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const inputId = input.id;
+                    const value = input.value.trim();
+                    const type = input.getAttribute('data-validation-type');
+                    
+                    // Clear previous timeout
+                    if (timeouts[inputId]) {
+                        clearTimeout(timeouts[inputId]);
+                    }
+                    
+                    if (!value) {
+                        this.clearValidationState(input);
+                        return;
+                    }
+                    
+                    // Show loading
+                    this.showValidationLoading(input);
+                    
+                    // Debounced validation
+                    timeouts[inputId] = setTimeout(() => {
+                        this.validateUniqueness(input, value, type);
+                    }, 800);
+                });
+            });
+        },
+        
+        validateUniqueness(input, value, type) {
+            const productId = this.getProductId();
+            const url = type === 'sku' ? '/Product/CheckSkuUniqueness' : '/Product/CheckEanUniqueness';
+            const data = type === 'sku' ? { sku: value, excludeProductId: productId } : { eanCode: value, excludeProductId: productId };
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': this.getAntiForgeryToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                this.hideValidationLoading(input);
+                if (result.isUnique) {
+                    this.showValidationSuccess(input);
+                } else {
+                    this.showValidationError(input, `${type.toUpperCase()} already exists`);
+                }
+            })
+            .catch(error => {
+                this.hideValidationLoading(input);
+                this.showValidationError(input, 'Validation failed');
+            });
+        },
+        
+        clearValidationState(input) {
+            const wrapper = input.closest('.input-validation-wrapper');
+            if (!wrapper) return;
+            
+            input.classList.remove('validating', 'valid', 'invalid');
+            
+            const spinner = wrapper.querySelector('.validation-spinner');
+            const icon = wrapper.querySelector('.validation-icon');
+            
+            if (spinner) spinner.style.display = 'none';
+            if (icon) {
+                icon.style.display = 'none';
+                icon.classList.remove('valid', 'invalid');
+            }
+        },
+        
+        showValidationLoading(input) {
+            const wrapper = input.closest('.input-validation-wrapper');
+            const spinner = wrapper?.querySelector('.validation-spinner');
+            
+            input.classList.add('validating');
+            if (spinner) spinner.style.display = 'block';
+        },
+        
+        hideValidationLoading(input) {
+            const wrapper = input.closest('.input-validation-wrapper');
+            const spinner = wrapper?.querySelector('.validation-spinner');
+            
+            input.classList.remove('validating');
+            if (spinner) spinner.style.display = 'none';
+        },
+        
+        showValidationSuccess(input) {
+            const wrapper = input.closest('.input-validation-wrapper');
+            const icon = wrapper?.querySelector('.validation-icon');
+            
+            input.classList.add('valid');
+            if (icon) {
+                icon.innerHTML = '✓';
+                icon.classList.add('valid');
+                icon.style.display = 'block';
+            }
+        },
+        
+        showValidationError(input, message) {
+            const wrapper = input.closest('.input-validation-wrapper');
+            const icon = wrapper?.querySelector('.validation-icon');
+            
+            input.classList.add('invalid');
+            if (icon) {
+                icon.innerHTML = '✗';
+                icon.classList.add('invalid');
+                icon.style.display = 'block';
+            }
+        },
+        
+        // Form submission confirmation
+        initConfirmation() {
+            const form = document.getElementById('productForm');
+            if (!form) return;
+            
+            // Named function for proper cleanup (strict mode compatible)
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                // Collect logo barcodes before submitting
+                this.collectLogoBarcodes();
+                
+                // Check for validation errors
+                const invalidInputs = document.querySelectorAll('.uniqueness-check.invalid');
+                if (invalidInputs.length > 0) {
+                    alert('Please fix validation errors before submitting.');
+                    invalidInputs[0].focus();
+                    return;
+                }
+                
+                // Get product name for confirmation
+                const productName = document.getElementById('Name')?.value || 'this product';
+                const isEdit = document.querySelector('input[name="Id"]') !== null;
+                const action = isEdit ? 'update' : 'create';
+                
+                if (confirm(`Are you sure you want to ${action} "${productName}"?`)) {
+                    // Clean removal of event listener (strict mode compatible)
+                    form.removeEventListener('submit', handleSubmit);
+                    form.submit();
+                }
+            };
+            
+            form.addEventListener('submit', handleSubmit);
+        },
+        
+        // Collect logo barcodes into hidden field
+        collectLogoBarcodes() {
+            const logoBarcodes = [];
+            const inputs = document.querySelectorAll('input[name^="LogoBarcode_"]');
+            
+            inputs.forEach(input => {
+                const value = input.value.trim();
+                if (value) {
+                    logoBarcodes.push(value);
+                }
+            });
+            
+            // Update hidden field with comma-separated values
+            const hiddenField = document.getElementById('LogoBarcodes');
+            if (hiddenField) {
+                hiddenField.value = logoBarcodes.join(',');
+                console.log('🔧 Collected logo barcodes:', hiddenField.value);
+            }
+        },
+        
+        // Utility methods
+        getProductId() {
+            const input = document.querySelector('input[name="Id"]');
+            return input ? parseInt(input.value) : null;
+        },
+        
+        getAntiForgeryToken() {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            return token ? token.value : '';
+        },
+        
+        // Suppress amateur logging
+        suppressAmateur() {
+            // This will be overridden by page-specific scripts if needed
+            window.productFormInitialized = true;
+        }
+    };
+    
+    // ===== GLOBAL UTILITIES =====
+    
+    // Image preview
+    window.previewImage = function(input, previewId) {
+        const preview = document.getElementById(previewId);
+        if (!preview) return;
+        
+        const url = input.value.trim();
+        if (url && FormSystem.isValidImageUrl(url)) {
+            preview.innerHTML = `<img src="${url}" alt="Preview" style="max-width:100%;max-height:100px;border-radius:4px;">`;
+        } else {
+            preview.innerHTML = url ? '<div class="text-danger">Invalid image URL</div>' : '';
+        }
+    };
+    
+    // Video preview
+    window.previewVideo = function(input, previewId) {
+        const preview = document.getElementById(previewId);
+        if (!preview) return;
+        
+        const url = input.value.trim();
+        if (url) {
+            const embed = FormSystem.createVideoEmbed(url);
+            preview.innerHTML = embed || '<div class="text-warning">Unsupported video format</div>';
+        } else {
+            preview.innerHTML = '';
+        }
+    };
+    
+    // Helper methods for FormSystem
+    FormSystem.isValidImageUrl = function(url) {
+        const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+        return extensions.some(ext => url.toLowerCase().includes(ext));
+    };
+    
+    FormSystem.createVideoEmbed = function(url) {
+        // YouTube
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            const match = url.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+            if (match) {
+                return `<iframe width="300" height="200" src="https://www.youtube.com/embed/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
+        
+        // Vimeo
+        if (url.includes('vimeo.com')) {
+            const match = url.match(/vimeo\.com\/(\d+)/);
+            if (match) {
+                return `<iframe width="300" height="200" src="https://player.vimeo.com/video/${match[1]}" frameborder="0" allowfullscreen></iframe>`;
+            }
+        }
+        
+        return null;
+    };
+
+    // ===== LOGO BARCODE MANAGEMENT =====
+    class LogoBarcodeManager {
+        constructor() {
+            this.maxBarcodes = 10;
+            this.barcodeCount = 0;
+            this.initialized = false;
+        }
+
+        init() {
+            if (this.initialized) return;
+            this.initialized = true;
+            
+            // Event delegation for logo barcode actions
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('#add-logo-barcode-btn')) {
+                    e.preventDefault();
+                    this.addLogoBarcodeGroup();
+                } else if (e.target.closest('.btn-remove[data-action="remove-logo-barcode"]')) {
+                    e.preventDefault();
+                    this.removeLogoBarcodeGroup(e.target.closest('.btn-remove'));
+                }
+            });
+
+            // Initialize existing barcodes count
+            this.updateBarcodeCount();
+        }
+
+        addLogoBarcodeGroup() {
+            console.log('🔧 addLogoBarcodeGroup called');
+            
+            // Doğru container ismini kullan - DOM'da gerçekte var olan
+            let container = document.getElementById('logo-barcode-inputs');
+            if (!container) {
+                container = document.querySelector('.logo-barcode-container');
+            }
+            
+            console.log('🔧 Found container:', !!container, container?.id || container?.className);
+            
+            if (!container) {
+                console.error('❌ Logo barcode container not found. Searched for: #logo-barcode-inputs, .logo-barcode-container');
+                return;
+            }
+
+            if (this.barcodeCount >= this.maxBarcodes) {
+                alert(`En fazla ${this.maxBarcodes} adet logo barkodu ekleyebilirsiniz.`);
+                return;
+            }
+
+            console.log('🔧 Adding new logo barcode group, current count:', this.barcodeCount);
+
+            const newIndex = this.barcodeCount + 1; // 1-based indexing like existing ones
+            
+            // DOM'daki mevcut yapıya uygun HTML (barcode-input-group)
+            const groupHtml = `
+                <div class="barcode-input-group">
+                    <label>${newIndex}. Logo Barkodu</label>
+                    <div class="barcode-input-wrapper">
+                        <input type="text" 
+                               name="LogoBarcode_${newIndex}" 
+                               class="form-control barcode-input" 
+                               placeholder="Logo barkodu girin (örn: 153.01.25.694)"
+                               pattern="[0-9]+(\\.[0-9]+)*"
+                               title="Sadece rakam ve nokta kullanın (örn: 153.01.25.694)" />
+                        <button type="button" class="btn-remove" data-action="remove-logo-barcode">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', groupHtml);
+            this.barcodeCount++;
+            this.updateAddButtonState();
+            
+            console.log('✅ Logo barcode group added successfully, new count:', this.barcodeCount);
+        }
+
+        removeLogoBarcodeGroup(button) {
+            console.log('🔧 removeLogoBarcodeGroup called with button:', button);
+            
+            // Doğru class name kullan
+            const group = button.closest('.barcode-input-group');
+            console.log('🔧 Found group element (.barcode-input-group):', !!group);
+            
+            if (group) {
+                console.log('✅ Removing logo barcode group');
+                group.remove();
+                this.barcodeCount--;
+                this.reindexBarcodes();
+                this.updateAddButtonState();
+                console.log('✅ Logo barcode group removed, new count:', this.barcodeCount);
+            } else {
+                console.error('❌ Could not find .barcode-input-group parent element');
+            }
+        }
+
+        reindexBarcodes() {
+            console.log('🔧 Reindexing barcode groups');
+            
+            // Doğru class name kullan
+            const groups = document.querySelectorAll('.barcode-input-group');
+            console.log('🔧 Found barcode groups:', groups.length);
+            
+            groups.forEach((group, index) => {
+                const label = group.querySelector('label');
+                if (label) {
+                    label.textContent = `${index + 1}. Logo Barkodu`;
+                }
+                
+                const input = group.querySelector('input[name^="LogoBarcode_"]');
+                if (input) {
+                    input.setAttribute('name', `LogoBarcode_${index + 1}`);
+                }
+                
+                console.log(`🔧 Reindexed group ${index + 1}`);
+            });
+        }
+
+        updateBarcodeCount() {
+            // Doğru class name kullan
+            this.barcodeCount = document.querySelectorAll('.barcode-input-group').length;
+            console.log('🔧 Updated barcode count:', this.barcodeCount);
+            this.updateAddButtonState();
+        }
+
+        updateAddButtonState() {
+            const addBtn = document.getElementById('add-logo-barcode-btn');
+            if (addBtn) {
+                addBtn.disabled = this.barcodeCount >= this.maxBarcodes;
+                if (this.barcodeCount >= this.maxBarcodes) {
+                    addBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Maksimum Limit';
+                } else {
+                    addBtn.innerHTML = '<i class="fas fa-plus"></i> Logo Barkodu Ekle';
+                }
+            }
+        }
+    }
+
+    // ===== MODERN EVENT DELEGATION FOR INLINE HANDLERS =====
+    class ProductFormEventManager {
+        constructor() {
+            this.initialized = false;
+        }
+
+        init() {
+            if (this.initialized) return;
+            this.initialized = true;
+            
+            // Replace all inline onchange/onclick handlers with event delegation
+            document.addEventListener('change', (e) => {
+                // Media preview handlers
+                if (e.target.matches('.media-input')) {
+                    const previewTarget = e.target.getAttribute('data-preview-target');
+                    if (previewTarget) {
+                        if (e.target.classList.contains('video-input')) {
+                            this.previewVideo(e.target, previewTarget);
+                        } else {
+                            this.previewImage(e.target, previewTarget);
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                // Media expand/collapse handlers
+                if (e.target.closest('[data-action="toggle-media"]')) {
+                    e.preventDefault();
+                    const button = e.target.closest('[data-action="toggle-media"]');
+                    const mediaType = button.getAttribute('data-media-type');
+                    this.toggleMediaExpansion(mediaType);
+                }
+            });
+        }
+
+        getPreviewId(input) {
+            // Extract preview ID from input attributes or generate one
+            const name = input.getAttribute('name');
+            if (name) {
+                if (name.includes('MarketplaceImageUrls')) {
+                    const index = name.match(/\[(\d+)\]/)?.[1];
+                    return `marketplace-preview-${index}`;
+                } else if (name.includes('ImageUrls')) {
+                    const index = name.match(/\[(\d+)\]/)?.[1];
+                    return `image-preview-${index}`;
+                } else if (name.includes('VideoUrls')) {
+                    const index = name.match(/\[(\d+)\]/)?.[1];
+                    return `video-preview-${index}`;
+                }
+            }
+            return null;
+        }
+
+        previewImage(input, previewId) {
+            const url = input.value.trim();
+            const previewContainer = document.getElementById(previewId);
+            
+            if (!previewContainer) return;
+
+            if (url && FormSystem.isValidImageUrl(url)) {
+                previewContainer.innerHTML = `
+                    <img src="${url}" alt="Preview" class="img-clean" 
+                         onload="this.style.opacity=1" 
+                         onerror="this.parentElement.innerHTML='<p class=\\'text-danger\\'>Görsel yüklenemedi</p>'" 
+                         style="opacity:0; transition: opacity 0.3s;" />
+                `;
+            } else if (url) {
+                previewContainer.innerHTML = '<p class="text-warning">Geçersiz görsel URL\'si</p>';
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        }
+
+        previewVideo(input, previewId) {
+            const url = input.value.trim();
+            const previewContainer = document.getElementById(previewId);
+            
+            if (!previewContainer) return;
+
+            if (url) {
+                const videoEmbed = FormSystem.createVideoEmbed(url);
+                if (videoEmbed) {
+                    previewContainer.innerHTML = `<div class="video-embed">${videoEmbed}</div>`;
+                } else {
+                    previewContainer.innerHTML = `<p>Video URL: <a href="${url}" target="_blank" rel="noopener">${url}</a></p>`;
+                }
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        }
+
+        toggleMediaExpansion(mediaType) {
+            console.log('🔧 toggleMediaExpansion called with:', mediaType);
+            
+            const additionalSection = document.getElementById(`${mediaType}-additional`);
+            const toggleText = document.getElementById(`${mediaType}-toggle-text`);
+            const toggleIcon = document.getElementById(`${mediaType}-toggle-icon`);
+            
+            if (!additionalSection || !toggleText || !toggleIcon) {
+                console.error('❌ Missing elements for media type:', mediaType);
+                return;
+            }
+
+            const isCurrentlyHidden = additionalSection.style.display === 'none' || 
+                                    additionalSection.classList.contains('hidden') ||
+                                    getComputedStyle(additionalSection).display === 'none';
+            
+            console.log('🔧 Current state - isHidden:', isCurrentlyHidden);
+            console.log('🔧 additionalSection classes before:', additionalSection.className);
+            console.log('🔧 additionalSection computed display:', getComputedStyle(additionalSection).display);
+            
+            if (isCurrentlyHidden) {
+                // Show additional inputs - Force with inline style
+                additionalSection.classList.remove('hidden');
+                additionalSection.style.display = 'block';
+                toggleIcon.classList.remove('fa-chevron-down');
+                toggleIcon.classList.add('fa-chevron-up');
+                
+                // Update text based on media type
+                if (mediaType === 'marketplace') {
+                    toggleText.textContent = 'Daralt';
+                } else if (mediaType === 'product') {
+                    toggleText.textContent = 'Daralt';
+                } else if (mediaType === 'video') {
+                    toggleText.textContent = 'Daralt';
+                }
+                console.log('✅ Media expanded:', mediaType);
+                console.log('🔧 additionalSection display after expand:', getComputedStyle(additionalSection).display);
+            } else {
+                // Hide additional inputs - Force with inline style
+                additionalSection.classList.add('hidden');
+                additionalSection.style.display = 'none';
+                toggleIcon.classList.remove('fa-chevron-up');
+                toggleIcon.classList.add('fa-chevron-down');
+                
+                // Restore original text
+                if (mediaType === 'marketplace') {
+                    toggleText.textContent = '7 Görsel Daha Ekle';
+                } else if (mediaType === 'product') {
+                    toggleText.textContent = '7 Görsel Daha Ekle';
+                } else if (mediaType === 'video') {
+                    toggleText.textContent = '3 Video Daha Ekle';
+                }
+                console.log('✅ Media collapsed:', mediaType);
+                console.log('🔧 additionalSection display after collapse:', getComputedStyle(additionalSection).display);
+            }
+        }
+    }
+
+    // Expose classes to global scope for initialization
+    window.LogoBarcodeManager = LogoBarcodeManager;
+    window.ProductFormEventManager = ProductFormEventManager;
+    
+    // ===== LEGACY CTRL+S FUNCTIONALITY - DEPRECATED =====
+    // NOTE: Ctrl+S functionality is now handled by UnsavedChangesManager
+    // This section is kept for compatibility but disabled
+    
+    /*
+    // Legacy keyboard shortcut handler - REPLACED by UnsavedChangesManager
+    const LegacyKeyboardShortcuts = {
+        init() {
+            // Disabled - UnsavedChangesManager handles this now
+            console.log('ℹ️ LegacyKeyboardShortcuts: Disabled - Using UnsavedChangesManager');
+        }
+    };
+    */
+    
+    // Manual initialization (will be called from DOMContentLoaded)
+    // Don't auto-initialize here to avoid timing issues
+    
+})();
+</script>

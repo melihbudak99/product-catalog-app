@@ -1,0 +1,433 @@
+/**
+ * UNSAVED CHANGES VISUAL INDICATORS
+ * =================================
+ * Professional UI components for unsaved changes detection
+ * Features: Floating indicator, button states, animations
+ */
+
+/* ===== UNSAVED CHANGES INDICATOR ===== */
+.unsaved-changes-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    z-index: 1000;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    min-width: 280px;
+    max-width: 350px;
+}
+
+.unsaved-changes-indicator.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.unsaved-changes-indicator.info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.unsaved-changes-indicator .indicator-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.unsaved-changes-indicator .indicator-content i {
+    font-size: 16px;
+    animation: pulse 2s infinite;
+}
+
+.unsaved-changes-indicator .indicator-text {
+    font-weight: 600;
+    flex: 1;
+}
+
+.unsaved-changes-indicator small {
+    opacity: 0.9;
+    font-size: 12px;
+    display: block;
+    margin-top: 2px;
+}
+
+/* ===== SAVE BUTTON ENHANCEMENTS ===== */
+.btn.has-changes {
+    position: relative;
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+    border-color: #28a745 !important;
+    animation: subtle-glow 2s infinite;
+}
+
+.btn.has-changes:hover {
+    background: linear-gradient(135deg, #218838, #1e9960) !important;
+    transform: translateY(-1px);
+}
+
+.unsaved-dot {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ff6b6b;
+    color: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    font-size: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse-dot 1.5s infinite;
+    border: 2px solid white;
+}
+
+/* ===== FORM FIELD INDICATORS ===== */
+.form-field-changed {
+    border-left: 3px solid #28a745 !important;
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+.form-field-changed:focus {
+    border-left-color: #20c997 !important;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* ===== PAGE TITLE INDICATOR ===== */
+/* Visual cue in browser tab */
+@media (max-width: 768px) {
+    .unsaved-changes-indicator {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        transform: translateY(-100px);
+    }
+    
+    .unsaved-changes-indicator.visible {
+        transform: translateY(0);
+    }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse-dot {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+@keyframes subtle-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
+    }
+}
+
+/* ===== LOADING STATES ===== */
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+    .unsaved-changes-indicator,
+    .btn.has-changes,
+    .unsaved-dot {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+@media (prefers-contrast: high) {
+    .unsaved-changes-indicator {
+        border: 2px solid currentColor;
+    }
+    
+    .btn.has-changes {
+        border: 2px solid #000 !important;
+    }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+    .unsaved-changes-indicator {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+    
+    .unsaved-changes-indicator.info {
+        background: linear-gradient(135deg, #20c997, #17a2b8);
+        box-shadow: 0 4px 12px rgba(32, 201, 151, 0.4);
+    }
+}
+
+/* ===== PROFESSIONAL ENHANCEMENTS ===== */
+.form-container {
+    position: relative;
+}
+
+.form-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #28a745, transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.form-container.has-changes::before {
+    opacity: 1;
+}
+
+/* Smooth focus transitions */
+.form-control:focus,
+.form-select:focus,
+textarea:focus {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Professional tooltips for save states */
+.save-tooltip {
+    position: relative;
+}
+
+.save-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1001;
+}
+
+.save-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* ===== NOTIFICATION SYSTEM STYLES ===== */
+.notification-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.notification {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+    position: relative;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification.hide {
+    transform: translateX(400px);
+    opacity: 0;
+}
+
+.notification-content {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-content i:first-child {
+    font-size: 18px;
+    min-width: 18px;
+}
+
+.notification-message {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    opacity: 0.7;
+}
+
+.notification-close:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.notification-progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.notification-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateX(-100%);
+    animation: progress-bar 5s linear forwards;
+}
+
+/* Notification Types */
+.notification-success {
+    border-left: 4px solid #28a745;
+    color: #155724;
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.notification-success .notification-content i:first-child {
+    color: #28a745;
+}
+
+.notification-error {
+    border-left: 4px solid #dc3545;
+    color: #721c24;
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.notification-error .notification-content i:first-child {
+    color: #dc3545;
+}
+
+.notification-warning {
+    border-left: 4px solid #ffc107;
+    color: #856404;
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+}
+
+.notification-warning .notification-content i:first-child {
+    color: #ffc107;
+}
+
+.notification-info {
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+    background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+}
+
+.notification-info .notification-content i:first-child {
+    color: #17a2b8;
+}
+
+/* Button saving state */
+.btn.saving {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed;
+}
+
+.btn.saving:hover {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    transform: none !important;
+}
+
+/* Progress bar animation */
+@keyframes progress-bar {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .notification {
+        transform: translateY(-100px);
+    }
+    
+    .notification.show {
+        transform: translateY(0);
+    }
+    
+    .notification.hide {
+        transform: translateY(-100px);
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .notification,
+    .notification-progress::after {
+        animation: none;
+        transition: none;
+    }
+}

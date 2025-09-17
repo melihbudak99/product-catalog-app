@@ -1,0 +1,341 @@
+@model product_catalog_app.src.models.Category
+@{
+    ViewData["Title"] = "Kategori Sil";
+    var productCount = ViewBag.ProductCount as int? ?? 0;
+    
+    // Header için parametreler
+    ViewBag.HeaderType = "default";
+    ViewBag.HeaderTitle = "Kategori Silme Onayı";
+    ViewBag.HeaderSubtitle = "Bu işlem geri alınamaz";
+    ViewBag.HeaderIcon = "fas fa-trash-alt";
+    ViewBag.ShowBackButton = true;
+    ViewBag.BackUrl = Url.Action("Index", "Category");
+}
+
+<div class="delete-category-page">
+    
+    <!-- Ortak Header Component -->
+    @await Html.PartialAsync("_PageHeader")
+
+    <div class="delete-content">
+        <div class="warning-section">
+            <div class="warning-card">
+                <div class="warning-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>Dikkat!</h2>
+                </div>
+                <div class="warning-body">
+                    <p>
+                        <strong>"@Model.Name"</strong> kategorisini silmek istediğinizden emin misiniz?
+                    </p>
+                    
+                    @if (productCount > 0)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-ban"></i>
+                            <div class="alert-content">
+                                <strong>Bu kategori silinemez!</strong>
+                                <p>Bu kategori @productCount ürün tarafından kullanılmaktadır. Kategoriyi silmek için önce bu ürünleri başka bir kategoriye taşıyın veya silin.</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <div class="alert-content">
+                                <strong>Bu işlem geri alınamaz!</strong>
+                                <p>Kategori silindiğinde bu işlem geri alınamaz. Devam etmek istediğinizden emin misiniz?</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="category-info">
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>Kategori Bilgileri</h3>
+                </div>
+                <div class="info-body">
+                    <div class="info-row">
+                        <span class="info-label">Kategori Adı:</span>
+                        <span class="info-value">@Model.Name</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Açıklama:</span>
+                        <span class="info-value">@(Model.Description ?? "Açıklama yok")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Oluşturma Tarihi:</span>
+                        <span class="info-value">@Model.CreatedDate.ToTurkeyTimeString("dd MMMM yyyy, HH:mm")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Güncelleme Tarihi:</span>
+                        <span class="info-value">@Model.UpdatedDate.ToTurkeyTimeString("dd MMMM yyyy, HH:mm")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ürün Sayısı:</span>
+                        <span class="info-value product-count">@productCount ürün</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        @if (productCount == 0)
+        {
+            <form method="post" action="@Url.Action("DeleteConfirmed", "Category", new { id = Model.Id })">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i>
+                    Evet, Kategoriyi Sil
+                </button>
+            </form>
+        }
+        <a href="@Url.Action("Index", "Category")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            @(productCount > 0 ? "Geri Dön" : "Hayır, İptal Et")
+        </a>
+    </div>
+</div>
+
+<style>
+.delete-category-page {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: calc(100vh - 120px);
+}
+
+/* Delete Category Page Specific Styles */
+
+.delete-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.warning-section {
+    grid-column: 1 / -1;
+}
+
+.warning-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border-left: 5px solid #e74c3c;
+}
+
+.warning-header {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    padding: 25px;
+    border-bottom: 1px solid rgba(231, 76, 60, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.warning-header i {
+    font-size: 2em;
+    color: #e74c3c;
+}
+
+.warning-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: #c0392b;
+}
+
+.warning-body {
+    padding: 30px;
+}
+
+.warning-body p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.alert {
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border: 1px solid #e74c3c;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffccbc 100%);
+    border: 1px solid #f39c12;
+}
+
+.alert i {
+    font-size: 1.5em;
+    margin-top: 2px;
+}
+
+.alert-danger i {
+    color: #e74c3c;
+}
+
+.alert-warning i {
+    color: #f39c12;
+}
+
+.alert-content strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.alert-content p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.category-info {
+    grid-column: 2;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.info-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 25px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.info-header i {
+    color: #667eea;
+    font-size: 1.2em;
+}
+
+.info-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    color: #333;
+}
+
+.info-body {
+    padding: 25px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.info-value {
+    color: #333;
+    text-align: right;
+}
+
+.product-count {
+    font-weight: 600;
+    color: #e74c3c;
+}
+
+.action-buttons {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: var(--white);
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .delete-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .category-info {
+        grid-column: 1;
+    }
+    
+    .warning-section {
+        grid-column: 1;
+    }
+    
+    .action-buttons {
+        grid-column: 1;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+    }
+}
+</style>

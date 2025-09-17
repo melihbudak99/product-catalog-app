@@ -1,0 +1,601 @@
+@{
+    var selectedCategoryId = ViewData["SelectedCategoryId"] as int?;
+    var fieldName = ViewData["FieldName"]?.ToString() ?? "CategoryId";
+    var isRequired = ViewData["IsRequired"] as bool? ?? false;
+}
+
+<div class="category-selector">
+    <div class="input-group">
+        <div class="searchable-dropdown">
+            <input type="text" id="@(fieldName)_search" class="form-control category-search" placeholder="Kategori ara... (örn: klozet, batarya, banyo)" autocomplete="off" />
+                        <select id="@fieldName" name="@fieldName" class="form-control category-dropdown" @(isRequired ? "required" : "") style="display: none;">
+                <option value="">Kategori Seçin</option>
+                <!-- Dynamic options will be loaded here -->
+            </select>
+                        <div class="dropdown-results" id="@(fieldName)_results" style="display: none;"></div>
+            <div class="dropdown-arrow"><i class="fas fa-chevron-down"></i></div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary add-category-btn" id="addCategoryBtn" title="Yeni Kategori Ekle">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+    
+    <!-- Quick Add Category Modal -->
+        <div class="quick-add-modal" id="quickCategoryModal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><i class="fas fa-plus-circle"></i> Yeni Kategori Ekle</h4>
+                <button type="button" class="close-modal" id="closeCategoryModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newCategoryName">Kategori Adı <span class="required">*</span></label>
+                    <input type="text" id="newCategoryName" class="form-control" placeholder="Kategori adını girin..." maxlength="100" />
+                    <small class="form-help">Örnek: Banyo Aksesuarları, Mutfak Gereçleri vs.</small>
+                </div>
+                <div class="form-group">
+                    <label for="newCategoryDescription">Açıklama (İsteğe bağlı)</label>
+                    <textarea id="newCategoryDescription" class="form-control" rows="2" placeholder="Kategori açıklaması..." maxlength="500"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelCategoryAdd">İptal</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">
+                    <i class="fas fa-save"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Selector CSS - Optimized (removing duplicates) -->
+<style>
+/* 
+   NOTE: This component contains only unique category selector styles
+   that are not covered by main.css. All common styles like .form-control,
+   .btn, etc. are handled by the main CSS system.
+*/
+
+/* Category selector specific enhancements */
+.category-selector .input-group {
+    display: flex;
+    position: relative;
+}
+
+.category-selector .searchable-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.category-selector .category-search {
+    flex: 1;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-right: 35px;
+    background-image: none;
+}
+
+.category-selector .dropdown-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--secondary-color);
+    font-size: 12px;
+}
+
+.category-selector .dropdown-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+}
+
+.category-selector .dropdown-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    border-bottom: 1px solid var(--light-color);
+    transition: background-color var(--transition-fast);
+}
+
+.category-selector .dropdown-item:hover {
+    background-color: var(--light-color);
+}
+
+.category-selector .dropdown-item.selected {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.category-selector .no-results {
+    padding: var(--spacing-lg) var(--spacing-md);
+    text-align: center;
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+.category-selector .add-category-btn {
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    min-width: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-selector .searchable-dropdown.open .dropdown-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.category-selector .searchable-dropdown.open .category-search {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.category-selector .highlight {
+    background-color: #ffeb3b;
+    font-weight: bold;
+}
+
+/* Quick add modal - only unique styles not covered by main CSS */
+.quick-add-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-add-modal .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+}
+
+.quick-add-modal .modal-content {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    z-index: 1051;
+}
+
+.quick-add-modal .modal-header {
+    padding: var(--spacing-lg) var(--spacing-lg) 0 var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.quick-add-modal .close-modal {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--secondary-color);
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+}
+
+.quick-add-modal .close-modal:hover {
+    color: var(--dark-color);
+}
+
+.quick-add-modal .modal-body {
+    padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+}
+
+.quick-add-modal .modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fieldName = '@fieldName';
+    const selectedCategoryId = @(selectedCategoryId?.ToString() ?? "null");
+    const categoryDropdown = document.getElementById(fieldName);
+    const categorySearch = document.getElementById(fieldName + '_search');
+    const dropdownResults = document.getElementById(fieldName + '_results');
+    const searchableDropdown = categorySearch.closest('.searchable-dropdown');
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    const quickModal = document.getElementById('quickCategoryModal');
+    const modalBackdrop = quickModal.querySelector('.modal-backdrop');
+    const newCategoryInput = document.getElementById('newCategoryName');
+    const newCategoryDescription = document.getElementById('newCategoryDescription');
+    const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+    const cancelBtn = document.getElementById('cancelCategoryAdd');
+    const closeBtn = document.getElementById('closeCategoryModal');
+
+    let categories = [];
+    let selectedIndex = -1;
+
+    // Load categories on page load
+    loadCategories();
+
+    // Search functionality with debouncing
+    let searchTimeout;
+    categorySearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const searchTerm = this.value.toLowerCase();
+            filterCategories(searchTerm);
+        }, 300); // 300ms debounce
+    });
+
+    categorySearch.addEventListener('focus', function() {
+        showDropdown();
+    });
+
+    categorySearch.addEventListener('keydown', function(e) {
+        const items = dropdownResults.querySelectorAll('.dropdown-item');
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    selectCategory(items[selectedIndex]);
+                }
+                break;
+            case 'Escape':
+                hideDropdown();
+                break;
+        }
+    });
+
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+        if (!searchableDropdown.contains(e.target)) {
+            hideDropdown();
+        }
+    });
+
+    // Show quick add modal
+    addCategoryBtn.addEventListener('click', function() {
+        quickModal.style.display = 'flex';
+        newCategoryInput.focus();
+    });
+
+    // Close modal events
+    [cancelBtn, closeBtn, modalBackdrop].forEach(element => {
+        element.addEventListener('click', closeModal);
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && quickModal.style.display === 'flex') {
+            closeModal();
+        }
+    });
+
+    // Save category
+    saveCategoryBtn.addEventListener('click', saveCategory);
+    
+    // Enter key to save
+    newCategoryInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveCategory();
+        }
+    });
+
+    function loadCategories() {
+        fetch('/Category/GetCategories')
+            .then(response => response.json())
+            .then(data => {
+                categories = data;
+                
+                // Clear existing options except first one
+                categoryDropdown.innerHTML = '<option value="">Kategori Seçin</option>';
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    if (category.description) {
+                        option.title = category.description;
+                    }
+                    categoryDropdown.appendChild(option);
+                });
+
+                // Restore selected value if any
+                if (selectedCategoryId && selectedCategoryId !== null) {
+                    categoryDropdown.value = selectedCategoryId;
+                    const selectedCategory = categories.find(c => c.id === selectedCategoryId);
+                    if (selectedCategory) {
+                        categorySearch.value = selectedCategory.name;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Kategoriler yüklenirken hata:', error);
+                showNotification('Kategoriler yüklenirken hata oluştu.', 'error');
+            });
+    }
+
+    function filterCategories(searchTerm) {
+        // Türkçe karakter normalizasyon fonksiyonu
+        function normalizeText(text) {
+            if (!text) return '';
+            return text
+                .replace(/ı/g, 'i').replace(/İ/g, 'I')
+                .replace(/ğ/g, 'g').replace(/Ğ/g, 'G')
+                .replace(/ü/g, 'u').replace(/Ü/g, 'U')
+                .replace(/ş/g, 's').replace(/Ş/g, 'S')
+                .replace(/ö/g, 'o').replace(/Ö/g, 'O')
+                .replace(/ç/g, 'c').replace(/Ç/g, 'C')
+                .toLowerCase()
+                .trim();
+        }
+        
+        const normalizedSearchTerm = normalizeText(searchTerm);
+        
+        const filtered = categories.filter(category => {
+            const normalizedCategoryName = normalizeText(category.name);
+            return normalizedCategoryName.includes(normalizedSearchTerm) || 
+                   category.name.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+        
+        // Kategorileri alfabetik sırala
+        filtered.sort((a, b) => a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' }));
+        
+        displayResults(filtered, searchTerm);
+        showDropdown();
+    }
+
+    function displayResults(filteredCategories, searchTerm) {
+        dropdownResults.innerHTML = '';
+        selectedIndex = -1;
+
+        if (filteredCategories.length === 0) {
+            dropdownResults.innerHTML = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>Aradığınız kategori bulunamadı</p>
+                    <small>Yeni kategori eklemek için <strong>+</strong> butonunu kullanın</small>
+                </div>`;
+            return;
+        }
+
+        filteredCategories.forEach((category, index) => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.setAttribute('data-id', category.id);
+            item.setAttribute('data-name', category.name);
+            
+            // Highlight search term
+            let displayName = category.name;
+            if (searchTerm) {
+                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                displayName = displayName.replace(regex, '<span class="highlight">$1</span>');
+            }
+            
+            item.innerHTML = displayName;
+            item.addEventListener('click', function() {
+                selectCategory(this);
+            });
+            
+            dropdownResults.appendChild(item);
+        });
+    }
+
+    function updateSelection(items) {
+        items.forEach((item, index) => {
+            item.classList.toggle('selected', index === selectedIndex);
+        });
+        
+        // Scroll to selected item
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            items[selectedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function selectCategory(item) {
+        const categoryId = item.getAttribute('data-id');
+        const categoryName = item.getAttribute('data-name');
+        
+        categorySearch.value = categoryName;
+        categoryDropdown.value = categoryId;
+        
+        hideDropdown();
+        
+        // Trigger change event
+        const changeEvent = new Event('change', { bubbles: true });
+        categoryDropdown.dispatchEvent(changeEvent);
+    }
+
+    function showDropdown() {
+        dropdownResults.style.display = 'block';
+        searchableDropdown.classList.add('open');
+        
+        if (dropdownResults.innerHTML === '') {
+            filterCategories('');
+        }
+    }
+
+    function hideDropdown() {
+        dropdownResults.style.display = 'none';
+        searchableDropdown.classList.remove('open');
+        selectedIndex = -1;
+    }
+
+    function closeModal() {
+        quickModal.style.display = 'none';
+        newCategoryInput.value = '';
+        newCategoryDescription.value = '';
+    }
+
+    function saveCategory() {
+        const categoryName = newCategoryInput.value.trim();
+        const categoryDescription = newCategoryDescription.value.trim();
+        
+        if (!categoryName) {
+            showNotification('Lütfen kategori adını girin.', 'warning');
+            newCategoryInput.focus();
+            return;
+        }
+
+        saveCategoryBtn.disabled = true;
+        saveCategoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+
+        const requestData = {
+            name: categoryName,
+            description: categoryDescription || null
+        };
+
+        fetch('/Category/CreateQuick', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Add new category to the list
+                categories.push({
+                    id: result.categoryId,
+                    name: result.categoryName,
+                    description: categoryDescription
+                });
+                
+                // Add new option to dropdown
+                const option = document.createElement('option');
+                option.value = result.categoryId;
+                option.textContent = result.categoryName;
+                categoryDropdown.appendChild(option);
+                
+                // Select the new category
+                categoryDropdown.value = result.categoryId;
+                categorySearch.value = result.categoryName;
+                
+                closeModal();
+                
+                showNotification(result.message || 'Kategori başarıyla eklendi!', 'success');
+            } else {
+                showNotification(result.message || 'Kategori eklenirken hata oluştu.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Kategori ekleme hatası:', error);
+            showNotification('Kategori eklenirken hata oluştu.', 'error');
+        })
+        .finally(() => {
+            saveCategoryBtn.disabled = false;
+            saveCategoryBtn.innerHTML = '<i class="fas fa-save"></i> Kaydet';
+        });
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} notification`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${getIconForType(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Style the notification
+        Object.assign(notification.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            borderRadius: '6px',
+            color: 'white',
+            fontWeight: '500',
+            zIndex: '10000',
+            minWidth: '300px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            opacity: '0',
+            transform: 'translateY(-20px)',
+            transition: 'all 0.3s ease'
+        });
+
+        // Set background color based on type
+        const colors = {
+            success: '#28a745',
+            error: '#dc3545',
+            warning: '#ffc107',
+            info: '#007bff'
+        };
+        notification.style.backgroundColor = colors[type] || colors.info;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateY(0)';
+        }, 100);
+
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-20px)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 4000);
+    }
+
+    function getIconForType(type) {
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-triangle',
+            warning: 'fa-exclamation-circle',
+            info: 'fa-info-circle'
+        };
+        return icons[type] || icons.info;
+    }
+});
+
+</script>

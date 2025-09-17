@@ -1,0 +1,104 @@
+@model product_catalog_app.src.models.Product
+
+<!-- Ürün Açıklaması -->
+<div class="form-section collapsible" id="description-section">
+    <div class="section-header">
+        <h2><i class="fas fa-file-text"></i> Ürün Açıklaması <i class="fas fa-chevron-down toggle-icon"></i></h2>
+        <p class="section-description">Detaylı ürün açıklaması ve özellikler</p>
+    </div>
+    
+    <div class="form-content collapsible-content show">
+        <div class="form-group">
+            <label for="Description">Detaylı Açıklama</label>
+            <div class="rich-text-editor">
+                <textarea id="Description" name="Description" class="hidden">@Model.Description</textarea>
+                <div class="editor-toolbar">
+                    <button type="button" class="editor-btn" data-command="bold" title="Kalın - Metni kalın yapar | Kısayol: Ctrl+B">
+                        <strong>B</strong>
+                    </button>
+                    <button type="button" class="editor-btn" data-command="italic" title="İtalik - Metni eğik yapar | Kısayol: Ctrl+I">
+                        <em>I</em>
+                    </button>
+                    <button type="button" class="editor-btn" data-command="underline" title="Alt Çizgi - Metnin altını çizer | Kısayol: Ctrl+U">
+                        <u>U</u>
+                    </button>
+                    <button type="button" class="editor-btn" data-command="heading" data-value="h1" title="Büyük Başlık (H1) - En büyük başlık formatı | Kısayol: Yok">
+                        H1
+                    </button>
+                    <button type="button" class="editor-btn" data-command="heading" data-value="h2" title="Orta Başlık (H2) - Orta boy başlık formatı | Kısayol: Yok">
+                        H2
+                    </button>
+                    <button type="button" class="editor-btn" data-command="heading" data-value="h3" title="Küçük Başlık (H3) - Küçük başlık formatı | Kısayol: Yok">
+                        H3
+                    </button>
+                    <button type="button" class="editor-btn" data-command="insertUnorderedList" title="Madde İşaretleri - Nokta ile liste oluşturur | Kısayol: Yok">
+                        • Liste
+                    </button>
+                    <button type="button" class="editor-btn" data-command="insertOrderedList" title="Numaralı Liste - Sıralı liste oluşturur | Kısayol: Yok">
+                        1. Liste
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button type="button" class="editor-btn" data-command="indent" title="Girinti Artır - Metni sağa doğru kaydırır | Kısayol: Tab">
+                        <i class="fas fa-indent"></i>
+                    </button>
+                    <button type="button" class="editor-btn" data-command="outdent" title="Girinti Azalt - Metni sola doğru kaydırır | Kısayol: Shift+Tab">
+                        <i class="fas fa-outdent"></i>
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <button type="button" class="editor-btn" data-command="removeFormat" title="Biçimlendirmeyi Temizle - Tüm formatları kaldırır | Kısayol: Yok">
+                        <i class="fas fa-remove-format"></i> Temizle
+                    </button>
+                    <div class="toolbar-divider"></div>
+                    <!-- HTML Preview/Source Toggle -->
+                    <div class="editor-mode-toggle">
+                        <button type="button" class="editor-btn mode-btn active" data-mode="visual" title="Visual Editor - WYSIWYG editör modu">
+                            <i class="fas fa-eye"></i> Visual
+                        </button>
+                        <button type="button" class="editor-btn mode-btn" data-mode="preview" title="HTML Preview - Sonucun nasıl görüneceğini gösterir">
+                            <i class="fas fa-desktop"></i> Preview
+                        </button>
+                        <button type="button" class="editor-btn mode-btn" data-mode="source" title="Source Code - HTML kodunu doğrudan düzenle">
+                            <i class="fas fa-code"></i> Source
+                        </button>
+                    </div>
+                </div>
+                <!-- Visual Editor (Default) -->
+                <div class="editor-content" id="editor-content" contenteditable="true" data-mode="visual">
+                    @Html.Raw(Model.Description ?? "<p>Ürün açıklamasını buraya yazın...</p>")
+                </div>
+                <!-- HTML Preview Area -->
+                <div class="editor-preview" id="editor-preview" data-mode="preview" style="display: none;">
+                    <div class="preview-content">
+                        @Html.Raw(Model.Description ?? "<p>Ürün açıklamasını buraya yazın...</p>")
+                    </div>
+                </div>
+                <!-- Source Code Editor -->
+                <div class="editor-source" id="editor-source" data-mode="source" style="display: none;">
+                    <textarea class="source-textarea" id="source-textarea" placeholder="HTML kodunu buraya yazın...">@Model.Description</textarea>
+                </div>
+            </div>
+            <div class="form-info">
+                <small class="form-help">HTML formatında ürün açıklaması - Bold, İtalik, Alt çizgi, H1-H3, Madde İşaretleri, Girinti</small>
+                <div class="description-counter">
+                    <span id="description-char-count">0/2000</span> karakter
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Features">Özellikler</label>
+                <textarea id="Features" name="Features" class="form-control" rows="3" 
+                          placeholder="Ürün özelliklerini girin">@Model.Features</textarea>
+                <small class="form-help">Ürünün öne çıkan özellikleri</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="Notes">Notlar</label>
+                <textarea id="Notes" name="Notes" class="form-control" rows="3" 
+                          placeholder="Ürün hakkında notlar">@Model.Notes</textarea>
+                <small class="form-help">Ürün hakkında özel notlar</small>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1901 @@
+@model product_catalog_app.src.models.Product
+
+@{
+    ViewData["Title"] = $"Ürün Detayı - {Model.Name}";
+    
+    // Product Badges HTML
+    var productBadges = "";
+    productBadges += $"<span class=\"status-badge {(Model.IsArchived ? "archived" : "active")}\">";
+    productBadges += $"<i class=\"{(Model.IsArchived ? "fas fa-archive" : "fas fa-check-circle")}\"></i>";
+    productBadges += $"{(Model.IsArchived ? "Arşivlenmiş" : "Aktif")}</span>";
+    
+    if (!string.IsNullOrEmpty(Model.Brand))
+    {
+        productBadges += $"<span class=\"brand-badge\"><i class=\"fas fa-tag\"></i> {Model.Brand}</span>";
+    }
+    
+    if (Model.CategoryEntity != null)
+    {
+        productBadges += $"<span class=\"category-badge\"><i class=\"fas fa-folder\"></i> {Model.CategoryEntity.Name}</span>";
+    }
+    
+    // Product Meta HTML
+    var productMeta = $"<span class=\"meta-item\"><strong>ID:</strong> {Model.Id}</span>";
+    if (!string.IsNullOrEmpty(Model.SKU))
+    {
+        productMeta += $"<span class=\"meta-item\"><strong>SKU:</strong> {Model.SKU}</span>";
+    }
+    if (!string.IsNullOrEmpty(Model.EanCode))
+    {
+        productMeta += $"<span class=\"meta-item\"><strong>EAN:</strong> {Model.EanCode}</span>";
+    }
+    productMeta += $"<span class=\"meta-item\"><strong>Oluşturulma:</strong> {Model.CreatedDate.ToTurkeyTimeString("dd.MM.yyyy HH:mm")}</span>";
+    if (Model.UpdatedDate.HasValue)
+    {
+        productMeta += $"<span class=\"meta-item\"><strong>Güncelleme:</strong> {Model.UpdatedDate.ToTurkeyTimeString("dd.MM.yyyy HH:mm")}</span>";
+    }
+    
+    // Action Buttons HTML - Let _PageHeader wrap them
+    var actionButtons = "";
+    actionButtons += "<a href=\"/\" class=\"action-btn home-btn\"><i class=\"fas fa-home\"></i><span>Ana Sayfa</span></a>";
+    actionButtons += "<a href=\"/Product\" class=\"action-btn list-btn\"><i class=\"fas fa-list\"></i><span>Ürün Listesi</span></a>";
+    actionButtons += $"<a href=\"/Product/EditProduct/{Model.Id}\" class=\"action-btn edit-btn\"><i class=\"fas fa-edit\"></i><span>Düzenle</span></a>";
+    actionButtons += "<a href=\"/Product/XmlManager\" class=\"action-btn export-btn\"><i class=\"fas fa-download\"></i><span>İçe/Dışa Aktar</span></a>";
+    
+    // Header için parametreler
+    ViewBag.HeaderType = "product-details";
+    ViewBag.HeaderTitle = Model.Name;
+    ViewBag.HeaderSubtitle = $"<div class=\"product-badges\">{productBadges}</div><div class=\"product-meta\">{productMeta}</div>";
+    ViewBag.ActionButtons = actionButtons;
+}
+
+<div class="container">
+    <!-- Ortak Header Component -->
+    @await Html.PartialAsync("_PageHeader")
+
+    <!-- Main Content -->
+    <div class="product-content">
+        <!-- Left Column - Images and Visual Content -->
+        <div class="content-left">
+            <!-- Marketplace Images Gallery -->
+            @{
+                var hasMarketplaceImages = Model.MarketplaceImageUrls?.Any(url => !string.IsNullOrEmpty(url)) == true;
+            }
+            @if (hasMarketplaceImages)
+            {
+                <div class="images-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-store"></i> Pazaryeri Görselleri</h3>
+                    </div>
+                    <div class="image-gallery">
+                        @for (int i = 0; i < (Model.MarketplaceImageUrls?.Count ?? 0); i++)
+                        {
+                            @if (!string.IsNullOrEmpty(Model.MarketplaceImageUrls?[i]))
+                            {
+                                <div class="image-item" onclick="openMarketplaceLightbox(@i)">
+                                    <img src="@Model.MarketplaceImageUrls![i]" alt="@Model.Name - Pazaryeri Görsel @(i + 1)" 
+                                         loading="lazy" onerror="this.parentElement.style.display='none'" />
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Product Images Gallery -->
+            <div class="images-section card-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-images"></i> Ürün Görselleri</h3>
+                </div>
+                @{
+                    var allImageUrls = new List<string>();
+                    // Eski sistem ImageUrl alanları
+                    if (!string.IsNullOrEmpty(Model.ImageUrl)) allImageUrls.Add(Model.ImageUrl);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl1)) allImageUrls.Add(Model.ImageUrl1);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl2)) allImageUrls.Add(Model.ImageUrl2);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl3)) allImageUrls.Add(Model.ImageUrl3);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl4)) allImageUrls.Add(Model.ImageUrl4);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl5)) allImageUrls.Add(Model.ImageUrl5);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl6)) allImageUrls.Add(Model.ImageUrl6);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl7)) allImageUrls.Add(Model.ImageUrl7);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl8)) allImageUrls.Add(Model.ImageUrl8);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl9)) allImageUrls.Add(Model.ImageUrl9);
+                    if (!string.IsNullOrEmpty(Model.ImageUrl10)) allImageUrls.Add(Model.ImageUrl10);
+                    
+                    // Yeni sistem ImageUrls listesi
+                    if (Model.ImageUrls != null)
+                    {
+                        allImageUrls.AddRange(Model.ImageUrls.Where(url => !string.IsNullOrEmpty(url)));
+                    }
+                    
+                    allImageUrls = allImageUrls.Where(url => !string.IsNullOrEmpty(url)).Distinct().ToList();
+                }
+                
+                @if (allImageUrls.Any())
+                {
+                    <div class="image-gallery">
+                        @for (int i = 0; i < allImageUrls.Count; i++)
+                        {
+                            <div class="image-item" onclick="openLightbox(@i)">
+                                <img src="@allImageUrls[i]" alt="@Model.Name - Görsel @(i + 1)" 
+                                     loading="lazy" onerror="this.parentElement.style.display='none'" />
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-images">
+                        <i class="fas fa-image"></i>
+                        <p>Henüz görsel eklenmemiş</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Product Description -->
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="description-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-align-left"></i> Ürün Açıklaması</h3>
+                    </div>
+                    <div class="description-content">
+                        @Html.Raw(Model.Description)
+                    </div>
+                </div>
+            }
+
+            <!-- Features -->
+            @if (!string.IsNullOrEmpty(Model.Features))
+            {
+                <div class="features-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-star"></i> Özellikler</h3>
+                    </div>
+                    <div class="features-content">
+                        @Html.Raw(Model.Features.Replace("\n", "<br>"))
+                    </div>
+                </div>
+            }
+
+            <!-- Product Videos Section -->
+            @if (Model.VideoUrls != null && Model.VideoUrls.Any(url => !string.IsNullOrEmpty(url)))
+            {
+                <div class="videos-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-video"></i> Ürün Videoları</h3>
+                    </div>
+                    <div class="video-gallery">
+                        @foreach (var videoUrl in Model.VideoUrls.Where(url => !string.IsNullOrEmpty(url)))
+                        {
+                            <div class="video-item">
+                                @{
+                                    string videoEmbed = "";
+                                    
+                                    // YouTube video
+                                    if (videoUrl.Contains("youtube.com") || videoUrl.Contains("youtu.be"))
+                                    {
+                                        string videoId = "";
+                                        if (videoUrl.Contains("youtube.com"))
+                                        {
+                                            var match = System.Text.RegularExpressions.Regex.Match(videoUrl, @"(?:v=|\/)([a-zA-Z0-9_-]{11})");
+                                            if (match.Success) videoId = match.Groups[1].Value;
+                                        }
+                                        else if (videoUrl.Contains("youtu.be"))
+                                        {
+                                            var match = System.Text.RegularExpressions.Regex.Match(videoUrl, @"youtu\.be\/([a-zA-Z0-9_-]{11})");
+                                            if (match.Success) videoId = match.Groups[1].Value;
+                                        }
+                                        
+                                        if (!string.IsNullOrEmpty(videoId))
+                                        {
+                                            videoEmbed = $"<iframe width='100%' height='250' src='https://www.youtube.com/embed/{videoId}' frameborder='0' allowfullscreen></iframe>";
+                                        }
+                                    }
+                                    // Vimeo video
+                                    else if (videoUrl.Contains("vimeo.com"))
+                                    {
+                                        var match = System.Text.RegularExpressions.Regex.Match(videoUrl, @"(?:vimeo\.com/)(\d+)");
+                                        if (match.Success)
+                                        {
+                                            videoEmbed = $"<iframe src='https://player.vimeo.com/video/{match.Groups[1].Value}' width='100%' height='250' frameborder='0' allowfullscreen></iframe>";
+                                        }
+                                    }
+                                    // Direct video file
+                                    else if (videoUrl.EndsWith(".mp4") || videoUrl.EndsWith(".webm") || videoUrl.EndsWith(".ogg"))
+                                    {
+                                        videoEmbed = $"<video width='100%' height='250' controls><source src='{videoUrl}' type='video/{System.IO.Path.GetExtension(videoUrl).TrimStart('.')}'></video>";
+                                    }
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(videoEmbed))
+                                {
+                                    <div class="video-wrapper">
+                                        @Html.Raw(videoEmbed)
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="video-link">
+                                        <i class="fas fa-external-link-alt"></i>
+                                        <a href="@videoUrl" target="_blank">Video bağlantısını aç</a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Notes -->
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="notes-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-sticky-note"></i> Notlar</h3>
+                    </div>
+                    <div class="notes-content">
+                        @Html.Raw(Model.Notes.Replace("\n", "<br>"))
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Right Column - Product Information -->
+        <div class="content-right">
+            <!-- Basic Information -->
+            <div class="basic-info-section card-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-info-circle"></i> Temel Bilgiler</h3>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Ürün Adı:</span>
+                        <span class="value">@Model.Name</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.SKU))
+                    {
+                        <div class="info-item">
+                            <span class="label">SKU:</span>
+                            <span class="value">@Model.SKU</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Brand))
+                    {
+                        <div class="info-item">
+                            <span class="label">Marka:</span>
+                            <span class="value brand">@Model.Brand</span>
+                        </div>
+                    }
+                    @if (Model.CategoryEntity != null || !string.IsNullOrEmpty(Model.Category))
+                    {
+                        <div class="info-item">
+                            <span class="label">Kategori:</span>
+                            <span class="value category">
+                                @if (Model.CategoryEntity != null)
+                                {
+                                    @Model.CategoryEntity.Name
+                                }
+                                else if (!string.IsNullOrEmpty(Model.Category))
+                                {
+                                    @Model.Category
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Belirtilmemiş</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.EanCode))
+                    {
+                        <div class="info-item">
+                            <span class="label">EAN Kodu:</span>
+                            <span class="value monospace">@Model.EanCode</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Physical Properties -->
+            <div class="physical-info-section card-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-ruler-combined"></i> Fiziksel Özellikler</h3>
+                </div>
+                <div class="info-grid">
+                    @if (Model.Weight > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Ağırlık:</span>
+                            <span class="value">@Model.Weight.ToString("0.##") kg</span>
+                        </div>
+                    }
+                    @if (Model.Desi > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Desi:</span>
+                            <span class="value">@Model.Desi.ToString("0.##")</span>
+                        </div>
+                    }
+                    @if (Model.Width > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Genişlik:</span>
+                            <span class="value">@Model.Width.ToString("0.##") cm</span>
+                        </div>
+                    }
+                    @if (Model.Height > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Yükseklik:</span>
+                            <span class="value">@Model.Height.ToString("0.##") cm</span>
+                        </div>
+                    }
+                    @if (Model.Depth > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">En:</span>
+                            <span class="value">@Model.Depth.ToString("0.##") cm</span>
+                        </div>
+                    }
+                    @if (Model.Length.HasValue && Model.Length.Value > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Uzunluk:</span>
+                            <span class="value">@Model.Length.Value.ToString("0.##") cm</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Material))
+                    {
+                        <div class="info-item">
+                            <span class="label">Materyal:</span>
+                            <span class="value">@Model.Material</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Color))
+                    {
+                        <div class="info-item">
+                            <span class="label">Renk:</span>
+                            <span class="value">@Model.Color</span>
+                        </div>
+                    }
+                    @if (Model.WarrantyMonths > 0)
+                    {
+                        <div class="info-item">
+                            <span class="label">Garanti:</span>
+                            <span class="value">@Model.WarrantyMonths ay</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Special Product Features -->
+            @{
+                var hasSpecialFeatures = !string.IsNullOrEmpty(Model.KlozetKanalYapisi) ||
+                                       !string.IsNullOrEmpty(Model.KlozetTipi) ||
+                                       !string.IsNullOrEmpty(Model.KlozetKapakCinsi) ||
+                                       !string.IsNullOrEmpty(Model.KlozetMontajTipi) ||
+                                       !string.IsNullOrEmpty(Model.LawaboSuTasmaDeligi) ||
+                                       !string.IsNullOrEmpty(Model.LawaboArmaturDeligi) ||
+                                       !string.IsNullOrEmpty(Model.LawaboTipi) ||
+                                       !string.IsNullOrEmpty(Model.LawaboOzelligi) ||
+                                       !string.IsNullOrEmpty(Model.BataryaCikisUcuUzunlugu) ||
+                                       !string.IsNullOrEmpty(Model.BataryaYuksekligi) ||
+                                       !string.IsNullOrEmpty(Model.KabinTipi);
+            }
+            @if (hasSpecialFeatures)
+            {
+                <div class="special-features-section card-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-cogs"></i> Ürüne Özel Özellikler</h3>
+                    </div>
+                    <div class="info-grid">
+                        @if (!string.IsNullOrEmpty(Model.KlozetKanalYapisi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Klozet Kanal Yapısı:</span>
+                                <span class="value">@Model.KlozetKanalYapisi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.KlozetTipi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Klozet Tipi:</span>
+                                <span class="value">@Model.KlozetTipi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.KlozetKapakCinsi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Klozet Kapak Cinsi:</span>
+                                <span class="value">@Model.KlozetKapakCinsi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.KlozetMontajTipi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Klozet Montaj Tipi:</span>
+                                <span class="value">@Model.KlozetMontajTipi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LawaboSuTasmaDeligi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Lavabo Su Taşma Deliği:</span>
+                                <span class="value">@Model.LawaboSuTasmaDeligi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LawaboArmaturDeligi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Lavabo Armatür Deliği:</span>
+                                <span class="value">@Model.LawaboArmaturDeligi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LawaboTipi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Lavabo Tipi:</span>
+                                <span class="value">@Model.LawaboTipi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.LawaboOzelligi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Lavabo Özelliği:</span>
+                                <span class="value">@Model.LawaboOzelligi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.BataryaCikisUcuUzunlugu))
+                        {
+                            <div class="info-item">
+                                <span class="label">Batarya Çıkış Ucu Uzunluğu:</span>
+                                <span class="value">@Model.BataryaCikisUcuUzunlugu</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.BataryaYuksekligi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Batarya Yüksekliği:</span>
+                                <span class="value">@Model.BataryaYuksekligi</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.KabinTipi))
+                        {
+                            <div class="info-item">
+                                <span class="label">Kabin Tipi:</span>
+                                <span class="value">@Model.KabinTipi</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Marketplace Barcodes Section -->
+    @{
+        var hasBarcodes = !string.IsNullOrEmpty(Model.TrendyolBarcode) ||
+                         !string.IsNullOrEmpty(Model.HepsiburadaBarcode) ||
+                         !string.IsNullOrEmpty(Model.HepsiburadaSellerStockCode) ||
+                         !string.IsNullOrEmpty(Model.KoctasBarcode) ||
+                         !string.IsNullOrEmpty(Model.KoctasIstanbulBarcode) ||
+                         !string.IsNullOrEmpty(Model.HepsiburadaTedarikBarcode) ||
+                         !string.IsNullOrEmpty(Model.PttAvmBarcode) ||
+                         !string.IsNullOrEmpty(Model.PazaramaBarcode) ||
+                         !string.IsNullOrEmpty(Model.HaceyapiBarcode) ||
+                         !string.IsNullOrEmpty(Model.AmazonBarcode) ||
+                         !string.IsNullOrEmpty(Model.N11CatalogId) ||
+                         !string.IsNullOrEmpty(Model.N11ProductCode) ||
+                         !string.IsNullOrEmpty(Model.SpareBarcode1) ||
+                         !string.IsNullOrEmpty(Model.SpareBarcode2) ||
+                         !string.IsNullOrEmpty(Model.SpareBarcode3) ||
+                         !string.IsNullOrEmpty(Model.SpareBarcode4) ||
+                         !string.IsNullOrEmpty(Model.LogoBarcodes) ||
+                         !string.IsNullOrEmpty(Model.KoctasEanBarcode) ||
+                         !string.IsNullOrEmpty(Model.KoctasEanIstanbulBarcode) ||
+                         !string.IsNullOrEmpty(Model.PttUrunStokKodu);
+                         
+        // Parse logo barcodes from JSON
+        List<string> logoBarcodesList = new List<string>();
+        if (!string.IsNullOrEmpty(Model.LogoBarcodes))
+        {
+            try
+            {
+                logoBarcodesList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(Model.LogoBarcodes) ?? new List<string>();
+            }
+            catch
+            {
+                // Eğer JSON parse edilemiyorsa, virgül ile ayrılmış string olarak dene
+                logoBarcodesList = Model.LogoBarcodes.Split(',').Select(b => b.Trim()).Where(b => !string.IsNullOrEmpty(b)).ToList();
+            }
+        }
+    }
+    @if (hasBarcodes)
+    {
+        <div class="barcodes-section card-section">
+            <div class="section-header">
+                <h3><i class="fas fa-barcode"></i> Pazaryeri Barkodları</h3>
+                <div class="barcode-count-badge">
+                    @{
+                        var barcodeCount = 0;
+                        if (!string.IsNullOrEmpty(Model.TrendyolBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.HepsiburadaBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.HepsiburadaSellerStockCode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.HepsiburadaTedarikBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.KoctasBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.KoctasIstanbulBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.PttAvmBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.PazaramaBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.HaceyapiBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.AmazonBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.N11CatalogId)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.N11ProductCode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.SpareBarcode1)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.SpareBarcode2)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.SpareBarcode3)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.SpareBarcode4)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.KoctasEanBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.KoctasEanIstanbulBarcode)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.PttUrunStokKodu)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.EntegraUrunId)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.EntegraUrunKodu)) barcodeCount++;
+                        if (!string.IsNullOrEmpty(Model.EntegraBarkod)) barcodeCount++;
+                        if (logoBarcodesList.Any()) barcodeCount += logoBarcodesList.Count;
+                    }
+                    @barcodeCount Barkod Türü
+                </div>
+            </div>
+            
+            <div class="barcode-grid">
+                @if (!string.IsNullOrEmpty(Model.TrendyolBarcode))
+                {
+                    <div class="barcode-item trendyol">
+                        <span class="barcode-platform">
+                            <i class="fas fa-shopping-bag"></i> Trendyol:
+                        </span>
+                        <span class="barcode-value">@Model.TrendyolBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.TrendyolBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.HepsiburadaBarcode))
+                {
+                    <div class="barcode-item hepsiburada">
+                        <span class="barcode-platform">
+                            <i class="fas fa-store"></i> Hepsiburada:
+                        </span>
+                        <span class="barcode-value">@Model.HepsiburadaBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.HepsiburadaBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.HepsiburadaSellerStockCode))
+                {
+                    <div class="barcode-item hepsiburada-seller">
+                        <span class="barcode-platform">
+                            <i class="fas fa-store"></i> Hepsiburada Satıcı Kodu:
+                        </span>
+                        <span class="barcode-value">@Model.HepsiburadaSellerStockCode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.HepsiburadaSellerStockCode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.HepsiburadaTedarikBarcode))
+                {
+                    <div class="barcode-item hepsiburada-tedarik">
+                        <span class="barcode-platform">
+                            <i class="fas fa-store"></i> Hepsiburada Tedarik:
+                        </span>
+                        <span class="barcode-value">@Model.HepsiburadaTedarikBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.HepsiburadaTedarikBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.KoctasBarcode))
+                {
+                    <div class="barcode-item koctas">
+                        <span class="barcode-platform">
+                            <i class="fas fa-hammer"></i> Koçtaş:
+                        </span>
+                        <span class="barcode-value">@Model.KoctasBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.KoctasBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.KoctasIstanbulBarcode))
+                {
+                    <div class="barcode-item koctas-istanbul">
+                        <span class="barcode-platform">
+                            <i class="fas fa-hammer"></i> Koçtaş İstanbul:
+                        </span>
+                        <span class="barcode-value">@Model.KoctasIstanbulBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.KoctasIstanbulBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.PttAvmBarcode))
+                {
+                    <div class="barcode-item ptt">
+                        <span class="barcode-platform">
+                            <i class="fas fa-envelope"></i> PTT AVM:
+                        </span>
+                        <span class="barcode-value">@Model.PttAvmBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.PttAvmBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.PazaramaBarcode))
+                {
+                    <div class="barcode-item pazarama">
+                        <span class="barcode-platform">
+                            <i class="fas fa-shopping-cart"></i> Pazarama:
+                        </span>
+                        <span class="barcode-value">@Model.PazaramaBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.PazaramaBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.HaceyapiBarcode))
+                {
+                    <div class="barcode-item haceyapi">
+                        <span class="barcode-platform">
+                            <i class="fas fa-building"></i> Haceyapı:
+                        </span>
+                        <span class="barcode-value">@Model.HaceyapiBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.HaceyapiBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.AmazonBarcode))
+                {
+                    <div class="barcode-item amazon">
+                        <span class="barcode-platform">
+                            <i class="fab fa-amazon"></i> Amazon:
+                        </span>
+                        <span class="barcode-value">@Model.AmazonBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.AmazonBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.N11CatalogId))
+                {
+                    <div class="barcode-item n11">
+                        <span class="barcode-platform">
+                            <i class="fas fa-shopping-bag"></i> N11 Catalog:
+                        </span>
+                        <span class="barcode-value">@Model.N11CatalogId</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.N11CatalogId')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.N11ProductCode))
+                {
+                    <div class="barcode-item n11-product">
+                        <span class="barcode-platform">
+                            <i class="fas fa-shopping-bag"></i> N11 Ürün Kodu:
+                        </span>
+                        <span class="barcode-value">@Model.N11ProductCode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.N11ProductCode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.SpareBarcode1))
+                {
+                    <div class="barcode-item spare">
+                        <span class="barcode-platform">
+                            <i class="fas fa-archive"></i> Yedek Barkod 1:
+                        </span>
+                        <span class="barcode-value">@Model.SpareBarcode1</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.SpareBarcode1')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.SpareBarcode2))
+                {
+                    <div class="barcode-item spare">
+                        <span class="barcode-platform">
+                            <i class="fas fa-archive"></i> Yedek Barkod 2:
+                        </span>
+                        <span class="barcode-value">@Model.SpareBarcode2</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.SpareBarcode2')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.SpareBarcode3))
+                {
+                    <div class="barcode-item spare">
+                        <span class="barcode-platform">
+                            <i class="fas fa-archive"></i> Yedek Barkod 3:
+                        </span>
+                        <span class="barcode-value">@Model.SpareBarcode3</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.SpareBarcode3')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.SpareBarcode4))
+                {
+                    <div class="barcode-item spare">
+                        <span class="barcode-platform">
+                            <i class="fas fa-archive"></i> Yedek Barkod 4:
+                        </span>
+                        <span class="barcode-value">@Model.SpareBarcode4</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.SpareBarcode4')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.KoctasEanBarcode))
+                {
+                    <div class="barcode-item koctas-ean">
+                        <span class="barcode-platform">
+                            <i class="fas fa-barcode"></i> Koçtaş EAN:
+                        </span>
+                        <span class="barcode-value">@Model.KoctasEanBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.KoctasEanBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.KoctasEanIstanbulBarcode))
+                {
+                    <div class="barcode-item koctas-ean-istanbul">
+                        <span class="barcode-platform">
+                            <i class="fas fa-barcode"></i> Koçtaş EAN İstanbul:
+                        </span>
+                        <span class="barcode-value">@Model.KoctasEanIstanbulBarcode</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.KoctasEanIstanbulBarcode')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.PttUrunStokKodu))
+                {
+                    <div class="barcode-item ptt-urun-stok">
+                        <span class="barcode-platform">
+                            <i class="fas fa-mail-bulk"></i> PTT Ürün ID:
+                        </span>
+                        <span class="barcode-value">@Model.PttUrunStokKodu</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.PttUrunStokKodu')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.EntegraUrunId))
+                {
+                    <div class="barcode-item entegra">
+                        <span class="barcode-platform">
+                            <i class="fas fa-network-wired"></i> Entegra Ürün ID:
+                        </span>
+                        <span class="barcode-value">@Model.EntegraUrunId</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.EntegraUrunId')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.EntegraUrunKodu))
+                {
+                    <div class="barcode-item entegra">
+                        <span class="barcode-platform">
+                            <i class="fas fa-network-wired"></i> Entegra Ürün Kodu:
+                        </span>
+                        <span class="barcode-value">@Model.EntegraUrunKodu</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.EntegraUrunKodu')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.EntegraBarkod))
+                {
+                    <div class="barcode-item entegra">
+                        <span class="barcode-platform">
+                            <i class="fas fa-network-wired"></i> Entegra Barkod:
+                        </span>
+                        <span class="barcode-value">@Model.EntegraBarkod</span>
+                        <button class="copy-btn" onclick="copyToClipboard('@Model.EntegraBarkod')" title="Kopyala">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                }
+                @if (logoBarcodesList.Any())
+                {
+                    @for (int i = 0; i < logoBarcodesList.Count; i++)
+                    {
+                        <div class="barcode-item logo">
+                            <span class="barcode-platform">
+                                <i class="fas fa-copyright"></i> Logo Barkod @(i + 1):
+                            </span>
+                            <span class="barcode-value">@logoBarcodesList[i]</span>
+                            <button class="copy-btn" onclick="copyToClipboard('@logoBarcodesList[i]')" title="Kopyala">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Image Lightbox Modal -->
+<div id="imageLightbox" class="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-content">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightboxImage" src="" alt="Ürün Görseli">
+        <div class="lightbox-navigation">
+            <button class="nav-btn prev-btn" onclick="event.stopPropagation(); navigateImage(-1)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="nav-btn next-btn" onclick="event.stopPropagation(); navigateImage(1)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="lightbox-counter">
+            <span id="lightboxCounter"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern Product Details Styling */
+* {
+    box-sizing: border-box;
+}
+
+.product-details-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* Product Details Specific Content Styles */
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Main Content */
+.product-content {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 40px;
+    padding: 40px;
+}
+
+.content-left, .content-right {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Card Section */
+.card-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.section-header i {
+    font-size: 1.2rem;
+    color: #667eea;
+}
+
+.barcode-count-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Image Gallery */
+.image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.image-item {
+    position: relative;
+    aspect-ratio: 1;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-item:hover img {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.no-images {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #6c757d;
+}
+
+.no-images i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    color: #dee2e6;
+}
+
+/* Information Grids */
+.info-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.info-item {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 600;
+    color: #555;
+}
+
+.value {
+    color: #333;
+}
+
+.value.brand {
+    color: #333333;
+    font-weight: 600;
+}
+
+.value.category {
+    color: #333333;
+    font-weight: 600;
+}
+
+.value.monospace {
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+/* Content Sections */
+.description-content, .features-content, .notes-content {
+    line-height: 1.7;
+    color: #555;
+    font-size: 1rem;
+}
+
+/* Enhanced styling for HTML content in description */
+.description-content h1, .description-content h2, .description-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.description-content h1 {
+    font-size: 1.8rem;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.description-content h2 {
+    font-size: 1.5rem;
+}
+
+.description-content h3 {
+    font-size: 1.3rem;
+}
+
+.description-content p {
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+.description-content ul, .description-content ol {
+    margin: 1rem 0;
+    padding-left: 30px; /* Tutarlı girinti */
+}
+
+.description-content ul {
+    list-style-type: disc;
+}
+
+.description-content ol {
+    list-style-type: decimal;
+}
+
+.description-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+    padding-left: 5px; /* Metin ile marker arasında boşluk */
+    min-height: 1.2em;
+}
+
+/* İç içe liste stilleri */
+.description-content ul ul {
+    margin: 5px 0;
+    padding-left: 25px;
+}
+
+.description-content ul ul li {
+    list-style-type: circle;
+}
+
+.description-content ul ul ul li {
+    list-style-type: square;
+}
+
+.description-content ol ol {
+    margin: 5px 0;
+    padding-left: 25px;
+}
+
+.description-content ol ol li {
+    list-style-type: lower-alpha;
+}
+
+.description-content ol ol ol li {
+    list-style-type: lower-roman;
+}
+
+/* Liste marker stilleri */
+.description-content li::marker {
+    color: #3498db;
+    font-weight: bold;
+}
+
+/* Features ve Notes içeriği için aynı liste stilleri */
+.features-content ul, .features-content ol,
+.notes-content ul, .notes-content ol {
+    margin: 1rem 0;
+    padding-left: 30px;
+}
+
+.features-content ul, .notes-content ul {
+    list-style-type: disc;
+}
+
+.features-content ol, .notes-content ol {
+    list-style-type: decimal;
+}
+
+.features-content li, .notes-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+    padding-left: 5px;
+    min-height: 1.2em;
+}
+
+.features-content ul ul, .notes-content ul ul {
+    margin: 5px 0;
+    padding-left: 25px;
+}
+
+.features-content ul ul li, .notes-content ul ul li {
+    list-style-type: circle;
+}
+
+.features-content ol ol, .notes-content ol ol {
+    margin: 5px 0;
+    padding-left: 25px;
+}
+
+.features-content ol ol li, .notes-content ol ol li {
+    list-style-type: lower-alpha;
+}
+
+.features-content li::marker, .notes-content li::marker {
+    color: #3498db;
+    font-weight: bold;
+}
+
+.description-content strong, .description-content b {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.description-content em, .description-content i {
+    font-style: italic;
+    color: #495057;
+}
+
+.description-content u {
+    text-decoration: underline;
+    text-decoration-color: #6c757d;
+    text-underline-offset: 2px;
+}
+
+/* Remove extra margin from first and last elements */
+.description-content > *:first-child {
+    margin-top: 0;
+}
+
+.description-content > *:last-child {
+    margin-bottom: 0;
+}
+
+/* Barcodes Section */
+.barcodes-section {
+    margin: 30px 40px;
+}
+
+.barcode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.barcode-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.barcode-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.barcode-platform {
+    font-weight: 600;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.barcode-value {
+    font-family: inherit;
+    font-weight: 450;
+    color: #000000;
+    font-size: 0.95rem;
+}
+
+.copy-btn {
+    background: white !important;
+    border: 1px solid #000 !important;
+    color: #000 !important;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.copy-btn:hover {
+    background: #f8f9fa !important;
+    color: #000 !important;
+    border-color: #333 !important;
+}
+
+.copy-btn i {
+    color: #000 !important;
+}
+
+/* All barcode items have neutral styling - no platform colors */
+.barcode-item .barcode-platform { 
+    color: #333; 
+}
+
+.barcode-item .copy-btn {
+    background: white !important;
+    border: 1px solid #000 !important;
+    color: #000 !important;
+}
+
+.barcode-item .copy-btn:hover {
+    background: #f8f9fa !important;
+    border-color: #333 !important;
+}
+
+.barcode-item .copy-btn i {
+    color: #000 !important;
+}
+
+/* Video Gallery */
+.video-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.video-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+}
+
+.video-wrapper iframe,
+.video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 12px 12px 0 0;
+}
+
+.video-link {
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.video-link i {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.video-link a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.video-link a:hover {
+    text-decoration: underline;
+}
+
+/* Lightbox */
+.lightbox {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    backdrop-filter: blur(5px);
+}
+
+.lightbox-content {
+    position: relative;
+    width: 90%;
+    height: 90%;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+    z-index: 10000;
+}
+
+.lightbox-navigation {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px;
+    transform: translateY(-50%);
+}
+
+.nav-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    padding: 15px 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.lightbox-counter {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    color: #000000;
+    padding: 10px 20px;
+    border-radius: 25px;
+    border: 1px solid rgba(0,0,0,0.2);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Responsive Design */
+@@media (max-width: 1024px) {
+    .product-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 30px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .product-title {
+        font-size: 2rem;
+    }
+}
+
+@@media (max-width: 768px) {
+    .product-details-container {
+        margin: 10px;
+        border-radius: 15px;
+    }
+    
+    .product-header {
+        padding: 25px;
+    }
+    
+    .product-title {
+        font-size: 1.8rem;
+    }
+    
+    .product-content {
+        padding: 20px;
+        gap: 20px;
+    }
+    
+    .barcodes-section {
+        margin: 20px;
+    }
+    
+    .barcode-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .info-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .barcode-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .image-gallery {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .video-gallery {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+}
+
+@@media (max-width: 480px) {
+    .product-badges, .product-meta, .action-buttons {
+        flex-direction: column;
+    }
+    
+    .action-buttons {
+        width: 100%;
+    }
+    
+    .action-btn {
+        justify-content: center;
+    }
+    
+    .barcode-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    /* Lightbox responsive adjustments */
+    .lightbox-content {
+        width: 95%;
+        height: 95%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .lightbox-close {
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+    }
+    
+    .lightbox-counter {
+        bottom: 15px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    .nav-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+}
+
+/* Additional lightbox responsive styles */
+@@media (max-width: 768px) {
+    .lightbox-content {
+        width: 95%;
+        height: 95%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .lightbox-close {
+        top: 15px;
+        right: 20px;
+        font-size: 28px;
+    }
+    
+    .lightbox-counter {
+        bottom: 20px;
+        padding: 8px 16px;
+    }
+}
+
+@@media (max-width: 1024px) {
+    .lightbox-content {
+        width: 92%;
+        height: 92%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
+</style>
+
+<script>
+// Image lightbox functionality
+let currentImageIndex = 0;
+let imageUrls = [];
+let currentMarketplaceImageIndex = 0;
+let marketplaceImageUrls = [];
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeImageGallery();
+    initializeMarketplaceImageGallery();
+    setupImageErrorHandling();
+});
+
+function initializeImageGallery() {
+    // Collect all image URLs from the page
+    imageUrls = [];
+    @{
+        var jsImageUrls = new List<string>();
+        if (!string.IsNullOrEmpty(Model.ImageUrl)) jsImageUrls.Add(Model.ImageUrl);
+        if (!string.IsNullOrEmpty(Model.ImageUrl1)) jsImageUrls.Add(Model.ImageUrl1);
+        if (!string.IsNullOrEmpty(Model.ImageUrl2)) jsImageUrls.Add(Model.ImageUrl2);
+        if (!string.IsNullOrEmpty(Model.ImageUrl3)) jsImageUrls.Add(Model.ImageUrl3);
+        if (!string.IsNullOrEmpty(Model.ImageUrl4)) jsImageUrls.Add(Model.ImageUrl4);
+        if (!string.IsNullOrEmpty(Model.ImageUrl5)) jsImageUrls.Add(Model.ImageUrl5);
+        if (!string.IsNullOrEmpty(Model.ImageUrl6)) jsImageUrls.Add(Model.ImageUrl6);
+        if (!string.IsNullOrEmpty(Model.ImageUrl7)) jsImageUrls.Add(Model.ImageUrl7);
+        if (!string.IsNullOrEmpty(Model.ImageUrl8)) jsImageUrls.Add(Model.ImageUrl8);
+        if (!string.IsNullOrEmpty(Model.ImageUrl9)) jsImageUrls.Add(Model.ImageUrl9);
+        if (!string.IsNullOrEmpty(Model.ImageUrl10)) jsImageUrls.Add(Model.ImageUrl10);
+        
+        // Add new system ImageUrls
+        if (Model.ImageUrls != null)
+        {
+            jsImageUrls.AddRange(Model.ImageUrls.Where(url => !string.IsNullOrEmpty(url)));
+        }
+        
+        jsImageUrls = jsImageUrls.Where(url => !string.IsNullOrEmpty(url)).Distinct().ToList();
+    }
+    
+    @for(int i = 0; i < jsImageUrls.Count; i++)
+    {
+        <text>imageUrls.push('@Html.Raw(Html.Encode(jsImageUrls[i]))');</text>
+    }
+}
+
+function initializeMarketplaceImageGallery() {
+    // Collect marketplace image URLs
+    marketplaceImageUrls = [];
+    @if (Model.MarketplaceImageUrls != null)
+    {
+        @for(int i = 0; i < Model.MarketplaceImageUrls.Count; i++)
+        {
+            @if (!string.IsNullOrEmpty(Model.MarketplaceImageUrls[i]))
+            {
+                <text>marketplaceImageUrls.push('@Html.Raw(Html.Encode(Model.MarketplaceImageUrls[i]))');</text>
+            }
+        }
+    }
+}
+
+function openLightbox(index) {
+    if (imageUrls.length === 0) return;
+    
+    currentImageIndex = index;
+    showLightbox(imageUrls, currentImageIndex, 'imageLightbox');
+}
+
+function openMarketplaceLightbox(index) {
+    if (marketplaceImageUrls.length === 0) return;
+    
+    currentMarketplaceImageIndex = index;
+    showLightbox(marketplaceImageUrls, currentMarketplaceImageIndex, 'imageLightbox');
+}
+
+function showLightbox(images, index, lightboxId) {
+    var lightbox = document.getElementById(lightboxId);
+    var lightboxImage = document.getElementById('lightboxImage');
+    var counter = document.getElementById('lightboxCounter');
+    
+    lightboxImage.src = images[index];
+    counter.textContent = (index + 1) + ' / ' + images.length;
+    lightbox.style.display = 'block';
+    
+    // Hide navigation if only one image
+    var navButtons = document.querySelectorAll('.nav-btn');
+    for (var i = 0; i < navButtons.length; i++) {
+        navButtons[i].style.display = images.length > 1 ? 'block' : 'none';
+    }
+}
+
+function closeLightbox() {
+    var lightbox = document.getElementById('imageLightbox');
+    lightbox.style.display = 'none';
+}
+
+function navigateImage(direction) {
+    // Determine which gallery is currently active
+    var isMarketplaceActive = marketplaceImageUrls.length > 0 && 
+                             document.getElementById('lightboxImage').src === marketplaceImageUrls[currentMarketplaceImageIndex];
+    
+    var currentImages, currentIndex;
+    if (isMarketplaceActive) {
+        currentImages = marketplaceImageUrls;
+        currentIndex = currentMarketplaceImageIndex;
+    } else {
+        currentImages = imageUrls;
+        currentIndex = currentImageIndex;
+    }
+    
+    if (currentImages.length <= 1) return;
+    
+    currentIndex += direction;
+    
+    if (currentIndex < 0) {
+        currentIndex = currentImages.length - 1;
+    } else if (currentIndex >= currentImages.length) {
+        currentIndex = 0;
+    }
+    
+    // Update the appropriate index
+    if (isMarketplaceActive) {
+        currentMarketplaceImageIndex = currentIndex;
+    } else {
+        currentImageIndex = currentIndex;
+    }
+    
+    var lightboxImage = document.getElementById('lightboxImage');
+    var counter = document.getElementById('lightboxCounter');
+    
+    lightboxImage.src = currentImages[currentIndex];
+    counter.textContent = (currentIndex + 1) + ' / ' + currentImages.length;
+}
+
+function setupImageErrorHandling() {
+    var images = document.querySelectorAll('.image-item img');
+    for (var i = 0; i < images.length; i++) {
+        images[i].addEventListener('error', function() {
+            this.parentElement.style.display = 'none';
+        });
+    }
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(event) {
+    var lightbox = document.getElementById('imageLightbox');
+    if (lightbox.style.display === 'block') {
+        switch(event.key) {
+            case 'Escape':
+                closeLightbox();
+                break;
+            case 'ArrowLeft':
+                navigateImage(-1);
+                break;
+            case 'ArrowRight':
+                navigateImage(1);
+                break;
+        }
+    }
+});
+
+// Smooth scroll to top on page load
+window.addEventListener('load', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Copy to clipboard functionality for barcode values
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Modern browsers
+        navigator.clipboard.writeText(text).then(function() {
+            showCopyNotification(text);
+        }).catch(function(err) {
+            console.error('Clipboard write failed: ', err);
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    var textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        var successful = document.execCommand('copy');
+        if (successful) {
+            showCopyNotification(text);
+        } else {
+            showCopyNotificationError('Kopyalama başarısız');
+        }
+    } catch (err) {
+        showCopyNotificationError('Kopyalama desteklenmiyor');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopyNotification(text) {
+    // Use the page's existing notification system if available
+    if (typeof window.notificationSystem !== 'undefined') {
+        window.notificationSystem.success('Kopyalandı', `Kod panoya kopyalandı: ${text}`, {
+            duration: 3000
+        });
+    } else {
+        // Fallback to custom notification that matches page design
+        showCustomNotification('Kod kopyalandı: ' + text, 'success');
+    }
+}
+
+function showCopyNotificationError(message) {
+    // Use the page's existing notification system if available
+    if (typeof window.notificationSystem !== 'undefined') {
+        window.notificationSystem.error('Hata', message, {
+            duration: 4000
+        });
+    } else {
+        // Fallback to custom notification
+        showCustomNotification(message, 'error');
+    }
+}
+
+function showCustomNotification(message, type = 'success') {
+    // Remove existing notifications
+    var existing = document.querySelector('.copy-notification');
+    if (existing) {
+        existing.remove();
+    }
+    
+    // Create notification element matching page design
+    var notification = document.createElement('div');
+    notification.className = 'copy-notification copy-notification-' + type;
+    
+    var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+    var bgGradient = type === 'success' 
+        ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' 
+        : 'linear-gradient(135deg, #dc3545 0%, #e74c3c 100%)';
+    
+    notification.innerHTML = `
+        <div class="notification-content-custom">
+            <i class="fas ${iconClass}" style="margin-right: 12px; font-size: 16px;"></i>
+            <div class="notification-text-custom">
+                <div class="notification-title-custom">${type === 'success' ? 'Başarılı' : 'Hata'}</div>
+                <div class="notification-message-custom">${message}</div>
+            </div>
+        </div>
+    `;
+    
+    // Style the notification to match page design
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        color: #2c3e50;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        z-index: 10000;
+        font-family: inherit;
+        max-width: 380px;
+        min-width: 300px;
+        border-left: 4px solid ${type === 'success' ? '#28a745' : '#dc3545'};
+        transform: translateX(100%);
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        background: ${type === 'success' ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)'};
+    `;
+    
+    // Add inner content styles
+    var style = document.createElement('style');
+    style.textContent = `
+        .notification-content-custom {
+            display: flex;
+            align-items: center;
+        }
+        .notification-content-custom i {
+            color: ${type === 'success' ? '#28a745' : '#dc3545'};
+            flex-shrink: 0;
+        }
+        .notification-title-custom {
+            font-weight: 600;
+            font-size: 14px;
+            margin: 0 0 2px 0;
+            color: #2c3e50;
+        }
+        .notification-message-custom {
+            font-size: 13px;
+            color: #5a6c7d;
+            margin: 0;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    requestAnimationFrame(function() {
+        notification.style.transform = 'translateX(0)';
+    });
+    
+    // Auto remove after 3 seconds
+    setTimeout(function() {
+        if (notification && notification.parentNode) {
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            setTimeout(function() {
+                if (notification && notification.parentNode) {
+                    notification.remove();
+                    style.remove();
+                }
+            }, 300);
+        }
+    }, 3000);
+}
+</script>

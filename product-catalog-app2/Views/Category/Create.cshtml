@@ -1,0 +1,753 @@
+@model product_catalog_app.src.models.Category
+@{
+    ViewData["Title"] = "Yeni Kategori Ekle";
+    
+    // Header için parametreler
+    ViewBag.HeaderType = "default";
+    ViewBag.HeaderTitle = "Yeni Kategori Ekle";
+    ViewBag.HeaderSubtitle = "Ürünlerinizi organize etmek için yeni bir kategori oluşturun";
+    ViewBag.HeaderIcon = "fas fa-plus-circle";
+    ViewBag.ShowBackButton = true;
+    ViewBag.BackUrl = Url.Action("Index", "Category");
+}
+
+<div class="container">
+    <div class="create-category-page">
+    
+    <!-- Ortak Header Component -->
+    @await Html.PartialAsync("_PageHeader")
+
+    <div class="create-content">
+        <div class="form-section">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-info-circle"></i> Kategori Bilgileri</h2>
+                </div>
+                <form asp-action="Create" method="post" class="category-form">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label required">Kategori Adı</label>
+                        <input asp-for="Name" class="form-control" placeholder="Örn: Banyo Aksesuarları, Mutfak Gereçleri" maxlength="100" required />
+                        <span asp-validation-for="Name" class="validation-error"></span>
+                        <small class="form-help">Açıklayıcı ve anlaşılır bir kategori adı girin. Kategori adı benzersiz olmalıdır.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description" class="form-label">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Bu kategorideki ürünler hakkında kısa bir açıklama..." maxlength="500"></textarea>
+                        <span asp-validation-for="Description" class="validation-error"></span>
+                        <small class="form-help">İsteğe bağlı: Kategoriyi daha iyi tanımlayan bir açıklama ekleyebilirsiniz.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Kategoriyi Kaydet
+                        </button>
+                        <a href="@Url.Action("Index", "Category")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Geri Dön
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-card">
+                <h3><i class="fas fa-lightbulb"></i> Kategori İpuçları</h3>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Açık ve net olun:</strong> Kategori adları anlaşılır ve tanımlayıcı olmalı
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Tekrardan kaçının:</strong> Aynı isimde kategori oluşturamazsınız
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Organize edin:</strong> Ana kategoriler oluşturup alt kategorileri düşünün
+                        </div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Esnek olun:</strong> Kategoriler daha sonra düzenlenebilir
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3><i class="fas fa-tags"></i> Örnek Kategoriler</h3>
+                <div class="examples-grid">
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-bath"></i>
+                        </div>
+                        <div class="example-name">Banyo Aksesuarları</div>
+                    </div>
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="example-name">Mutfak Gereçleri</div>
+                    </div>
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="example-name">Yapı Malzemeleri</div>
+                    </div>
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="example-name">Elektrik Malzemeleri</div>
+                    </div>
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        <div class="example-name">Bahçe Ürünleri</div>
+                    </div>
+                    <div class="example-category">
+                        <div class="example-icon">
+                            <i class="fas fa-spray-can"></i>
+                        </div>
+                        <div class="example-name">Temizlik Ürünleri</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3><i class="fas fa-keyboard"></i> Kısayol Tuşları</h3>
+                <div class="shortcuts-list">
+                    <div class="shortcut-item">
+                        <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                        <span>Kaydet</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Esc</kbd>
+                        <span>Geri Dön</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <kbd>Tab</kbd>
+                        <span>Sonraki Alan</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Create Category Page Styles */
+.create-category-page {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: calc(100vh - 120px);
+}
+
+/* Create Category Page Specific Styles */
+
+.create-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    height: fit-content;
+}
+
+.form-card {
+    height: 100%;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 25px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.form-header h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-form {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.validation-error {
+    color: #dc3545;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-help {
+    color: #6c757d;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: var(--white);
+}
+
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.info-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.2em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.tip-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.tip-icon {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.tip-content {
+    flex: 1;
+    line-height: 1.5;
+    color: #495057;
+}
+
+.examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+}
+
+.example-category {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.example-category:hover {
+    background: #e9ecef;
+    transform: translateY(-3px);
+}
+
+.example-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.example-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #495057;
+    line-height: 1.2;
+}
+
+.shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.shortcut-item kbd {
+    background: #e9ecef;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8em;
+    color: #495057;
+}
+
+.shortcut-item span {
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .create-category-page {
+        padding: 15px;
+    }
+    
+    .create-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .examples-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .example-category {
+        padding: 15px 10px;
+    }
+    
+    .example-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 1em;
+    }
+}
+</style>
+
+<script>
+// Category form enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.category-form');
+    const nameInput = document.querySelector('#Name');
+    const descriptionInput = document.querySelector('#Description');
+    
+    // Auto-focus on name input
+    if (nameInput) {
+        nameInput.focus();
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+S to save
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            form.submit();
+        }
+        
+        // Escape to go back
+        if (e.key === 'Escape') {
+            window.location.href = '/Category';
+        }
+    });
+    
+    // Example category click handler
+    document.querySelectorAll('.example-category').forEach(example => {
+        example.addEventListener('click', function() {
+            const exampleName = this.querySelector('.example-name').textContent;
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.value = exampleName;
+                nameInput.focus();
+            }
+        });
+    });
+    
+    // Form validation enhancements
+    form.addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+            e.preventDefault();
+            nameInput.focus();
+            showToast('Kategori adı boş olamaz!', 'error');
+            return;
+        }
+        
+        if (name.length < 2) {
+            e.preventDefault();
+            nameInput.focus();
+            showToast('Kategori adı en az 2 karakter olmalıdır!', 'error');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...';
+    });
+});
+
+function showToast(message, type = 'info') {
+    // Create toast if it doesn't exist
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    
+    // Set message and type
+    toast.textContent = message;
+    toast.className = `toast toast-${type} show`;
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Add toast CSS
+const toastStyles = `
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 10000;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.toast.show {
+    transform: translateX(0);
+}
+
+.toast-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.toast-error {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.toast-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = toastStyles;
+document.head.appendChild(styleSheet);
+</script>
+
+<style>
+.create-category-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.create-category-header h1 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.create-category-header .lead {
+    color: #666;
+    font-size: 1.1em;
+}
+
+.create-category-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    height: fit-content;
+}
+
+.category-form .form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+    color: #333;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.form-help {
+    color: #6c757d;
+    font-size: 0.875em;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    color: white;
+    text-decoration: none;
+}
+
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.info-card {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.info-card h3 {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-card ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.info-card li {
+    margin-bottom: 8px;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+.example-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.example-tag {
+    background: #e9ecef;
+    color: #495057;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.text-danger {
+    color: #dc3545;
+    font-size: 0.875em;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Responsive styles removed for compatibility */
+</style>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

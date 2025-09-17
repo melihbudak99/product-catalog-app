@@ -1,0 +1,12 @@
+tunnel: 4371200e-4085-45dd-bb47-20cbaebb53ff
+credentials-file: C:\Users\User\.cloudflared\4371200e-4085-45dd-bb47-20cbaebb53ff.json
+
+ingress:
+  # Ana uygulama - herhangi bir subdomain ile erişilebilir
+  - hostname: "*.trycloudflare.com"
+    service: http://product-catalog:5000
+  # Belirli bir domain varsa buraya ekleyin
+  # - hostname: urun-katalog.example.com
+  #   service: http://product-catalog:5000
+  # 404 fallback
+  - service: http_status:404

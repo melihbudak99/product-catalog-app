@@ -1,0 +1,142 @@
+@{
+    ViewData["Title"] = "Sunucu Hatası";
+}
+
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: #dc3545;"></i>
+        </div>
+        <h1 class="error-title">500</h1>
+        <h2 class="error-subtitle">Sunucu Hatası</h2>
+        <p class="error-description">
+            Üzgünüz, bir sunucu hatası oluştu. Teknik ekibimiz bu sorunu çözmek için çalışıyor.
+            Lütfen birkaç dakika sonra tekrar deneyin.
+        </p>
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+            <button onclick="location.reload()" class="btn btn-outline-secondary">
+                <i class="fas fa-redo"></i> Tekrar Dene
+            </button>
+        </div>
+        <div class="error-support">
+            <p>Sorun devam ederse, lütfen sistem yöneticinize başvurun.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.error-content {
+    text-align: center;
+    max-width: 500px;
+}
+
+.error-icon {
+    margin-bottom: 2rem;
+}
+
+.error-title {
+    font-size: 6rem;
+    font-weight: 700;
+    color: #dc3545;
+    margin: 0;
+    line-height: 1;
+}
+
+.error-subtitle {
+    font-size: 2rem;
+    color: #495057;
+    margin: 1rem 0;
+}
+
+.error-description {
+    color: #6c757d;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.error-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.error-actions .btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.error-actions .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.error-actions .btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+}
+
+.error-actions .btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.error-support {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.error-support p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+@@media (max-width: 768px) {
+    .error-title {
+        font-size: 4rem;
+    }
+    
+    .error-subtitle {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 200px;
+    }
+}
+</style>

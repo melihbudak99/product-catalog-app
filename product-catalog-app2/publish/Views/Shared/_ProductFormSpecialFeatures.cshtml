@@ -1,0 +1,145 @@
+@model product_catalog_app.src.models.Product
+
+<!-- Ürüne Özel Özellikler -->
+<div class="form-section collapsible" id="special-features-section">
+    <div class="section-header">
+        <h2><i class="fas fa-cogs"></i> Ürüne Özel Özellikler <i class="fas fa-chevron-down toggle-icon"></i></h2>
+        <p class="section-description">Banyo ve mutfak ürünlerine özel detaylar</p>
+    </div>
+    
+    <div class="form-content collapsible-content">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="KlozetKanalYapisi">Klozet Kanal Yapısı</label>
+                <select id="KlozetKanalYapisi" name="KlozetKanalYapisi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Kanallı" selected="@(Model.KlozetKanalYapisi == "Kanallı")">Kanallı</option>
+                    <option value="Kanalsız" selected="@(Model.KlozetKanalYapisi == "Kanalsız")">Kanalsız</option>
+                    <option value="Vortex" selected="@(Model.KlozetKanalYapisi == "Vortex")">Vortex</option>
+                </select>
+                <small class="form-help">Klozet kanal durumu</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="KlozetTipi">Klozet Tipi</label>
+                <select id="KlozetTipi" name="KlozetTipi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Alttan Klozet" selected="@(Model.KlozetTipi == "Alttan Klozet")">Alttan Klozet</option>
+                    <option value="Arkadan Klozet" selected="@(Model.KlozetTipi == "Arkadan Klozet")">Arkadan Klozet</option>
+                    <option value="Asma Klozet" selected="@(Model.KlozetTipi == "Asma Klozet")">Asma Klozet</option>
+                    <option value="Çocuk Klozet" selected="@(Model.KlozetTipi == "Çocuk Klozet")">Çocuk Klozet</option>
+                    <option value="Duvara Sıfır Klozet" selected="@(Model.KlozetTipi == "Duvara Sıfır Klozet")">Duvara Sıfır Klozet</option>
+                    <option value="Engelli Klozet" selected="@(Model.KlozetTipi == "Engelli Klozet")">Engelli Klozet</option>
+                </select>
+                <small class="form-help">Klozet montaj tipi</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="KlozetKapakCinsi">Klozet Kapak Cinsi</label>
+                <select id="KlozetKapakCinsi" name="KlozetKapakCinsi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Duroplast" selected="@(Model.KlozetKapakCinsi == "Duroplast")">Duroplast</option>
+                    <option value="Thermoplast" selected="@(Model.KlozetKapakCinsi == "Thermoplast")">Thermoplast</option>
+                </select>
+                <small class="form-help">Kapak malzemesi</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="KlozetMontajTipi">Klozet Montaj Tipi</label>
+                <select id="KlozetMontajTipi" name="KlozetMontajTipi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Açık Montaj" selected="@(Model.KlozetMontajTipi == "Açık Montaj")">Açık Montaj</option>
+                    <option value="Gizli Montaj" selected="@(Model.KlozetMontajTipi == "Gizli Montaj")">Gizli Montaj</option>
+                </select>
+                <small class="form-help">Montaj yöntemi</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="LawaboSuTasmaDeligi">Lavabo Su Taşma Deliği</label>
+                <select id="LawaboSuTasmaDeligi" name="LawaboSuTasmaDeligi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Var" selected="@(Model.LawaboSuTasmaDeligi == "Var")">Var</option>
+                    <option value="Yok" selected="@(Model.LawaboSuTasmaDeligi == "Yok")">Yok</option>
+                </select>
+                <small class="form-help">Su taşma deliği durumu</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="LawaboArmaturDeligi">Lavabo Armatür Deliği</label>
+                <select id="LawaboArmaturDeligi" name="LawaboArmaturDeligi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Var" selected="@(Model.LawaboArmaturDeligi == "Var")">Var</option>
+                    <option value="Yok" selected="@(Model.LawaboArmaturDeligi == "Yok")">Yok</option>
+                </select>
+                <small class="form-help">Armatür deliği durumu</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="LawaboTipi">Lavabo Tipi</label>
+                <select id="LawaboTipi" name="LawaboTipi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Köşeli" selected="@(Model.LawaboTipi == "Köşeli")">Köşeli</option>
+                    <option value="Oval" selected="@(Model.LawaboTipi == "Oval")">Oval</option>
+                    <option value="Yuvarlak" selected="@(Model.LawaboTipi == "Yuvarlak")">Yuvarlak</option>
+                </select>
+                <small class="form-help">Lavabo şekli</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="LawaboOzelligi">Lavabo Özelliği</label>
+                <select id="LawaboOzelligi" name="LawaboOzelligi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="Ayaklı" selected="@(Model.LawaboOzelligi == "Ayaklı")">Ayaklı</option>
+                    <option value="Etajer Uyumlu" selected="@(Model.LawaboOzelligi == "Etajer Uyumlu")">Etajer Uyumlu</option>
+                    <option value="Monoblok" selected="@(Model.LawaboOzelligi == "Monoblok")">Monoblok</option>
+                    <option value="Tezgah Altı" selected="@(Model.LawaboOzelligi == "Tezgah Altı")">Tezgah Altı</option>
+                    <option value="Tezgah Üstü" selected="@(Model.LawaboOzelligi == "Tezgah Üstü")">Tezgah Üstü</option>
+                </select>
+                <small class="form-help">Lavabo kullanım özelliği</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="BataryaCikisUcuUzunlugu">Batarya - Çıkış Ucu Uzunluğu</label>
+                <select id="BataryaCikisUcuUzunlugu" name="BataryaCikisUcuUzunlugu" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="0 - 10 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "0 - 10 cm")">0 - 10 cm</option>
+                    <option value="10 - 15 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "10 - 15 cm")">10 - 15 cm</option>
+                    <option value="15 - 20 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "15 - 20 cm")">15 - 20 cm</option>
+                    <option value="20 - 25 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "20 - 25 cm")">20 - 25 cm</option>
+                    <option value="25 - 30 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "25 - 30 cm")">25 - 30 cm</option>
+                    <option value="30 - 35 cm" selected="@(Model.BataryaCikisUcuUzunlugu == "30 - 35 cm")">30 - 35 cm</option>
+                    <option value="35 cm ve üzeri" selected="@(Model.BataryaCikisUcuUzunlugu == "35 cm ve üzeri")">35 cm ve üzeri</option>
+                </select>
+                <small class="form-help">Batarya çıkış ucu uzunluk aralığı</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="BataryaYuksekligi">Batarya - Yükseklik</label>
+                <select id="BataryaYuksekligi" name="BataryaYuksekligi" class="form-control">
+                    <option value="">Seçiniz</option>
+                    <option value="0 - 10 cm" selected="@(Model.BataryaYuksekligi == "0 - 10 cm")">0 - 10 cm</option>
+                    <option value="10 - 15 cm" selected="@(Model.BataryaYuksekligi == "10 - 15 cm")">10 - 15 cm</option>
+                    <option value="15 - 20 cm" selected="@(Model.BataryaYuksekligi == "15 - 20 cm")">15 - 20 cm</option>
+                    <option value="20 - 25 cm" selected="@(Model.BataryaYuksekligi == "20 - 25 cm")">20 - 25 cm</option>
+                    <option value="25 - 30 cm" selected="@(Model.BataryaYuksekligi == "25 - 30 cm")">25 - 30 cm</option>
+                    <option value="30 - 35 cm" selected="@(Model.BataryaYuksekligi == "30 - 35 cm")">30 - 35 cm</option>
+                    <option value="35 - 40 cm" selected="@(Model.BataryaYuksekligi == "35 - 40 cm")">35 - 40 cm</option>
+                    <option value="40 - 45 cm" selected="@(Model.BataryaYuksekligi == "40 - 45 cm")">40 - 45 cm</option>
+                    <option value="45 - 50 cm" selected="@(Model.BataryaYuksekligi == "45 - 50 cm")">45 - 50 cm</option>
+                    <option value="50 - 60 cm" selected="@(Model.BataryaYuksekligi == "50 - 60 cm")">50 - 60 cm</option>
+                    <option value="55 - 60 cm" selected="@(Model.BataryaYuksekligi == "55 - 60 cm")">55 - 60 cm</option>
+                    <option value="60 - 90 cm" selected="@(Model.BataryaYuksekligi == "60 - 90 cm")">60 - 90 cm</option>
+                </select>
+                <small class="form-help">Batarya yükseklik aralığı</small>
+            </div>
+        </div>
+    </div>
+</div>

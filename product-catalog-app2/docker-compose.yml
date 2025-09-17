@@ -1,0 +1,55 @@
+services:
+  product-catalog:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: product-catalog-app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      # SQLite database path
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/products.db;Cache=Shared;Pooling=true;
+      # Performance settings for 5000+ products
+      - DOTNET_gcServer=1
+      - DOTNET_gcConcurrent=1
+      - COMPlus_gcServer=1
+      - DOTNET_ThreadPool_MinWorkerThreads=32
+      - DOTNET_ThreadPool_MinCompletionPortThreads=16
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs:/app/logs:rw
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Performance optimizations for 5000+ products
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    # Network optimization for Cloudflare
+    networks:
+      - app-network
+
+  # Cloudflare Tunnel (optional - activate when needed)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --url http://product-catalog:5000
+    depends_on:
+      - product-catalog
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

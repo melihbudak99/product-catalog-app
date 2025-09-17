@@ -1,0 +1,39 @@
+@*
+    This partial view contains validation scripts that are commonly used across the application.
+    It includes client-side validation libraries for forms.
+*@
+
+<!-- jQuery CDN - Load first -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" 
+        integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" 
+        crossorigin="anonymous" 
+        referrerpolicy="no-referrer"></script>
+
+<!-- jQuery Validation CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js" 
+        integrity="sha512-rstIgDs0xPgmG6RX1Aba4KV5cWJbAMcvRCVmglpam9SoHZiUCyQVDdH2LPlxoHtrv17XWblE/V/PP+Tr04hbtA==" 
+        crossorigin="anonymous" 
+        referrerpolicy="no-referrer"></script>
+
+<!-- jQuery Validation Unobtrusive CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js" 
+        integrity="sha512-EanukVTZc4W9tUCLnDl069Izidg49PcNRKO1upLzKt9ajq66i+bXOtlzXcIbRhb6vVEGF6BCc8wQi5T1ztCpTQ==" 
+        crossorigin="anonymous" 
+        referrerpolicy="no-referrer"></script>
+
+<script>
+    // Additional custom validation scripts can be added here
+    $(document).ready(function() {
+        // Initialize any custom validation rules
+        console.log('Validation scripts loaded');
+        
+        // Custom validation methods can be added here
+        if (typeof $.validator !== 'undefined') {
+            // Add custom validation rules if needed
+            $.validator.addMethod("customRule", function(value, element) {
+                // Custom validation logic
+                return true;
+            }, "Custom validation message");
+        }
+    });
+</script>

@@ -1,0 +1,125 @@
+@{
+    ViewData["Title"] = "Sayfa Bulunamadı";
+}
+
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="fas fa-search" style="font-size: 4rem; color: #6c757d;"></i>
+        </div>
+        <h1 class="error-title">404</h1>
+        <h2 class="error-subtitle">Sayfa Bulunamadı</h2>
+        <p class="error-description">
+            Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+            Lütfen URL'yi kontrol edin veya ana sayfaya dönün.
+        </p>
+        <div class="error-actions">
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+            <a href="/Product" class="btn btn-outline-secondary">
+                <i class="fas fa-box"></i> Ürünler
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.error-content {
+    text-align: center;
+    max-width: 500px;
+}
+
+.error-icon {
+    margin-bottom: 2rem;
+}
+
+.error-title {
+    font-size: 6rem;
+    font-weight: 700;
+    color: #dc3545;
+    margin: 0;
+    line-height: 1;
+}
+
+.error-subtitle {
+    font-size: 2rem;
+    color: #495057;
+    margin: 1rem 0;
+}
+
+.error-description {
+    color: #6c757d;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.error-actions .btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+    color: white;
+}
+
+.error-actions .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.error-actions .btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+}
+
+.error-actions .btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+}
+
+@@media (max-width: 768px) {
+    .error-title {
+        font-size: 4rem;
+    }
+    
+    .error-subtitle {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 200px;
+    }
+}
+</style>

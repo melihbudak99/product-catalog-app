@@ -1,0 +1,86 @@
+@{
+    ViewData["Title"] = "Error";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        Bir Hata Oluştu
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5>Üzgünüz, bir hata meydana geldi!</h5>
+                        <p class="mb-0">
+                            @if (ViewData["ErrorMessage"] != null)
+                            {
+                                @ViewData["ErrorMessage"]
+                            }
+                            else
+                            {
+                                <text>Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.</text>
+                            }
+                        </p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Ne yapabilirsiniz:</h6>
+                        <ul>
+                            <li>Sayfayı yenileyin ve tekrar deneyin</li>
+                            <li>Ana sayfaya dönün ve farklı bir işlem yapın</li>
+                            <li>Sorun devam ederse sistem yöneticisine başvurun</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="@Url.Action("Index", "Product")" class="btn btn-primary">
+                            <i class="fa fa-home"></i> Ana Sayfa
+                        </a>
+                        <button onclick="window.history.back()" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left"></i> Geri Dön
+                        </button>
+                        <button onclick="window.location.reload()" class="btn btn-info">
+                            <i class="fa fa-refresh"></i> Sayfayı Yenile
+                        </button>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        Hata Zamanı: @TimezoneHelper.NowInTurkey().ToString("dd/MM/yyyy HH:mm:ss")
+                        <br>
+                        Request ID: @Context.TraceIdentifier
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.btn {
+    margin-right: 10px;
+    margin-bottom: 5px;
+}
+
+.alert-danger {
+    border-left: 5px solid #dc3545;
+}
+
+ul li {
+    margin-bottom: 5px;
+}
+</style>

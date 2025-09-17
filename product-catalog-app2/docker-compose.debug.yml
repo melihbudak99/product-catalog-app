@@ -1,0 +1,60 @@
+services:
+  product-catalog:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - ASPNETCORE_CONFIGURATION=Debug
+    container_name: product-catalog-debug
+    environment:
+      # DEBUG ENVIRONMENT SETTINGS
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      - ASPNETCORE_LOGGING__LOGLEVEL__DEFAULT=Debug
+      - ASPNETCORE_LOGGING__LOGLEVEL__MICROSOFT=Debug
+      - ASPNETCORE_LOGGING__LOGLEVEL__MICROSOFT.HOSTING.LIFETIME=Information
+      - ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=false
+      
+      # SQLite database path
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/products.db;Cache=Shared;Pooling=true;
+      
+      # Debug Performance settings
+      - DOTNET_gcServer=0
+      - DOTNET_gcConcurrent=1
+      - DOTNET_ThreadPool_MinWorkerThreads=8
+      - DOTNET_ThreadPool_MinCompletionPortThreads=4
+      
+      # Enable detailed debugging
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+      
+    volumes:
+      - ./data:/app/data:rw
+      - ./logs:/app/logs:rw
+    ports:
+      - "5000:5000"
+    restart: "no"  # Don't restart automatically in debug mode
+    
+    # Debug health check (less aggressive)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+      start_period: 60s
+    
+    # Debug resource limits (more generous)
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '4.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    networks:
+      - debug-network
+
+networks:
+  debug-network:
+    driver: bridge

@@ -1,0 +1,104 @@
+@model product_catalog_app.src.models.Product
+
+<!-- Temel Bilgiler -->
+<div class="form-section" id="basic-info-section">
+    <div class="section-header">
+        <h2><i class="fas fa-info-circle"></i> Temel Bilgiler</h2>
+    </div>
+    
+    <div class="form-content">
+        <!-- Ürün Adı (Tam genişlik) -->
+        <div class="form-row name-full-width">
+            <div class="form-group">
+                <label for="Name">Ürün Adı *</label>
+                <div class="input-with-counter">
+                    <input type="text" id="Name" name="Name" class="form-control character-counter" 
+                           placeholder="Ürün adını girin" 
+                           value="@Model.Name"
+                           maxlength="200" required />
+                    <div class="character-count">
+                        <span class="char-count">0/200</span>
+                    </div>
+                </div>
+                <small class="form-help">Ürün başlığı (maksimum 200 karakter)</small>
+            </div>
+        </div>
+
+        <!-- Marka - Kategori -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Brand">Marka</label>
+                <input type="text" id="Brand" name="Brand" class="form-control" 
+                       placeholder="Ürünün markasını girin" 
+                       value="@Model.Brand"
+                       maxlength="100" />
+                <small class="form-help">Ürün markası</small>
+            </div>
+
+            <div class="form-group">
+                <label for="CategoryId">Kategori</label>
+                @await Html.PartialAsync("_CategorySelector", new ViewDataDictionary(ViewData) 
+                { 
+                    ["SelectedCategoryId"] = Model.CategoryId,
+                    ["FieldName"] = "CategoryId",
+                    ["IsRequired"] = false 
+                })
+            </div>
+        </div>
+
+        <!-- SKU - EAN -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="SKU">Üretici Ürün Kodu</label>
+                <div class="input-validation-wrapper">
+                    <input type="text" id="SKU" name="SKU" class="form-control uniqueness-check" 
+                           placeholder="Üretici Kodunu Girin" 
+                           value="@Model.SKU"
+                           maxlength="50" 
+                           data-validation-type="sku" />
+                    <div class="validation-spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="validation-icon" style="display: none;"></div>
+                </div>
+                <div class="validation-message"></div>
+                <small class="form-help">Üretici tarafından verilen ürün kodu (benzersiz olmalı)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="EanCode">EAN Kodu</label>
+                <div class="input-validation-wrapper">
+                    <input type="text" id="EanCode" name="EanCode" class="form-control uniqueness-check" 
+                           placeholder="EAN/Barkod kodu" 
+                           value="@Model.EanCode" 
+                           maxlength="13" 
+                           data-validation-type="ean" />
+                    <div class="validation-spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="validation-icon" style="display: none;"></div>
+                </div>
+                <div class="validation-message"></div>
+                <small class="form-help">En fazla 13 haneli barkod kodu</small>
+            </div>
+        </div>
+
+        <!-- Arşiv Durumu (Edit sayfası için) -->
+        @if (ViewBag.IsEditMode == true)
+        {
+            <div class="form-row">
+                <div class="form-group">
+                    <div class="form-check-wrapper">
+                        <input type="checkbox" id="IsArchived" name="IsArchived" 
+                               class="form-check-input" 
+                               value="true" 
+                               @(Model.IsArchived ? "checked" : "") />
+                        <input type="hidden" name="IsArchived" value="false" />
+                        <label for="IsArchived" class="form-check-label">🗄️ Arşivlenmiş Ürün</label>
+                    </div>
+                    <small class="form-help">Arşivlenmiş ürünler listede gizlenir ancak silinmez</small>
+                </div>
+            </div>
+        }
+    </div>
+</div>

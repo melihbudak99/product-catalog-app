@@ -1,0 +1,933 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.DependencyInjection;
+using product_catalog_app.src.common;
+using product_catalog_app.src.services;
+using product_catalog_app.src.filters;
+using product_catalog_app.src.models;
+using product_catalog_app.src.data;
+using product_catalog_app.src.interfaces;
+using System.Globalization;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure culture for decimal parsing
+var cultureInfo = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+// Add services to the container.
+builder.Services.AddControllersWithViews(options =>
+{
+    // Add global exception handling filter
+    options.Filters.Add<GlobalExceptionFilter>();
+});
+
+builder.Services.AddAntiforgery();
+
+// Performance optimizations - Enhanced cache configuration
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 100_000_000; // 100MB cache limit for large datasets
+    options.CompactionPercentage = 0.25; // Compact when 25% of limit reached
+});
+builder.Services.AddResponseCaching(); // Add response caching
+
+// Configure response compression (exclude during development to avoid browser refresh issues)
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+    });
+}
+else
+{
+    builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.ResponseCompressionOptions>(options =>
+    {
+        options.Providers.Clear(); // Disable compression during development
+    });
+}
+
+// Register filters
+builder.Services.AddScoped<GlobalExceptionFilter>();
+
+// Database context with advanced connection pooling and performance optimizations
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? Constants.Database.SQLITE_DEFAULT;
+
+builder.Services.AddDbContextPool<ProductDbContext>(options =>
+    options.UseSqlite(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(30); // 30 second timeout for long queries
+    })
+    .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
+    .EnableServiceProviderCaching()
+    .EnableDetailedErrors(builder.Environment.IsDevelopment())
+    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution), // Performance improvement
+    poolSize: 128); // Connection pool size for high-load scenarios
+
+// Register services with interfaces for better DI
+if (builder.Environment.IsProduction() || builder.Configuration.GetValue<bool>("UseOptimizedServices", false))
+{
+    // Production/Optimized services for large datasets
+    builder.Services.AddScoped<ProductRepository>();
+    builder.Services.AddScoped<ProductService>();
+    builder.Services.AddScoped<IProductService>(provider => provider.GetRequiredService<ProductService>());
+    builder.Services.AddScoped<IProductRepository>(provider => provider.GetRequiredService<ProductRepository>());
+    
+    builder.Logging.AddConsole().SetMinimumLevel(LogLevel.Information);
+    Console.WriteLine("🚀 Using optimized services for production operations");
+}
+else
+{
+    // Development/Standard services
+    builder.Services.AddScoped<IProductRepository, ProductRepository>();
+    builder.Services.AddScoped<ProductRepository>();
+    builder.Services.AddScoped<IProductService, ProductService>();
+    builder.Services.AddScoped<ProductService>();
+}
+
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<CategoryRepository>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<ValidationService>();
+builder.Services.AddScoped<XmlService>();
+
+// Add new Export/Import services
+builder.Services.AddScoped<ExportColumnService>();
+builder.Services.AddScoped<ExportService>();
+builder.Services.AddScoped<ImportService>();
+builder.Services.AddScoped<ExportColumnService>();
+
+// Add professional database service
+builder.Services.AddScoped<DatabaseService>();
+
+// Add health checks for production monitoring - Safe implementation
+builder.Services.AddHealthChecks()
+    .AddCheck("database", () => {
+        // Simple, safe database check without BuildServiceProvider
+        try {
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            using var connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString);
+            connection.Open();
+            return HealthCheckResult.Healthy("Database connection successful");
+        } catch (Exception ex) {
+            return HealthCheckResult.Unhealthy($"Database error: {ex.Message}");
+        }
+    })
+    .AddCheck("memory", () => {
+        var allocatedBytes = GC.GetTotalMemory(false);
+        var maxMemoryMB = 500; // 500MB limit
+        if (allocatedBytes > maxMemoryMB * 1024 * 1024)
+        {
+            return HealthCheckResult.Unhealthy(
+                $"Memory usage {allocatedBytes / 1024 / 1024}MB exceeds limit of {maxMemoryMB}MB");
+        }
+        return HealthCheckResult.Healthy(
+            $"Memory usage: {allocatedBytes / 1024 / 1024}MB");
+    });
+
+var app = builder.Build();
+
+// Professional database initialization
+using (var scope = app.Services.CreateScope())
+{
+    var databaseService = scope.ServiceProvider.GetRequiredService<DatabaseService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        logger.LogInformation("Starting professional database initialization...");
+        var success = await databaseService.InitializeDatabaseAsync();
+        
+        if (!success)
+        {
+            logger.LogError("Database initialization failed!");
+            throw new InvalidOperationException("Cannot start application - database initialization failed");
+        }
+
+        logger.LogInformation("Professional database initialization completed successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Critical database initialization error");
+        throw;
+    }
+}
+
+        // IsArchived kolonu varmı kontrol et ve yoksa ekle
+        try
+        {
+            // Test query to see if IsArchived column exists
+            var testQuery = context.Database.ExecuteSqlRaw("SELECT IsArchived FROM Products LIMIT 1");
+            logger.LogInformation("IsArchived column already exists");
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: IsArchived"))
+        {
+            // IsArchived kolonu yok, ekle
+            logger.LogInformation("IsArchived column not found, adding...");
+            try
+            {
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN IsArchived INTEGER NOT NULL DEFAULT 0");
+                logger.LogInformation("IsArchived column added to Products table");
+            }
+            catch (Exception alterEx)
+            {
+                logger.LogError(alterEx, "Error adding IsArchived column to Products table");
+            }
+
+            try
+            {
+                context.Database.ExecuteSqlRaw("ALTER TABLE ProductXmls ADD COLUMN IsArchived INTEGER NOT NULL DEFAULT 0");
+                logger.LogInformation("IsArchived column added to ProductXmls table");
+            }
+            catch (Exception alterEx)
+            {
+                logger.LogError(alterEx, "Error adding IsArchived column to ProductXmls table");
+            }
+
+            logger.LogInformation("IsArchived column migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking IsArchived column");
+        }
+
+        // Video sütunları kontrolü ve eklenmesi
+        try
+        {
+            // VideoUrls sütunu kontrolü
+            try
+            {
+                var testVideoQuery = context.Database.ExecuteSqlRaw("SELECT VideoUrls FROM Products LIMIT 1");
+                logger.LogInformation("VideoUrls column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: VideoUrls"))
+            {
+                logger.LogInformation("VideoUrls column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN VideoUrls TEXT DEFAULT ''");
+                logger.LogInformation("VideoUrls column added to Products table");
+            }
+
+            // MarketplaceVideoUrls sütunu kontrolü - KALDIRILDI
+            // Bu özellik artık kullanılmıyor
+            
+            logger.LogInformation("Video columns migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding video columns");
+        }
+
+        // ImageUrl1-ImageUrl10 sütunları kontrolü ve eklenmesi
+        try
+        {
+            // ImageUrl1 sütunu kontrolü
+            try
+            {
+                var testImageQuery = context.Database.ExecuteSqlRaw("SELECT ImageUrl1 FROM Products LIMIT 1");
+                logger.LogInformation("ImageUrl1-ImageUrl10 columns already exist");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: ImageUrl1"))
+            {
+                logger.LogInformation("ImageUrl1-ImageUrl10 columns not found, adding...");
+                for (int i = 1; i <= 10; i++)
+                {
+                    context.Database.ExecuteSqlRaw($"ALTER TABLE Products ADD COLUMN ImageUrl{i} TEXT DEFAULT ''");
+                    logger.LogInformation($"ImageUrl{i} column added to Products table");
+                }
+            }
+            
+            logger.LogInformation("ImageUrl columns migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding ImageUrl columns");
+        }
+
+        // Yeni barkod sütunları kontrolü ve eklenmesi
+        try
+        {
+            // HepsiburadaSellerStockCode sütunu kontrolü
+            try
+            {
+                var testHepsiSellerQuery = context.Database.ExecuteSqlRaw("SELECT HepsiburadaSellerStockCode FROM Products LIMIT 1");
+                logger.LogInformation("HepsiburadaSellerStockCode column already exists");
+                
+                // NOT NULL constraint kontrolü ve düzeltmesi
+                try
+                {
+                    // NULL değer insert testi - IsActive kaldırıldı (kolon mevcut değil)
+                    var testInsert = context.Database.ExecuteSqlRaw(@"
+                        CREATE TEMP TABLE test_nullable AS 
+                        SELECT * FROM Products WHERE 1=0;
+                        INSERT INTO test_nullable (Name, SKU, Brand, Category, Description, Features, ImageUrl, Weight, Desi, Width, Height, Depth, WarrantyMonths, Material, Color, EanCode, Notes, CreatedDate, UpdatedDate, IsArchived, HepsiburadaSellerStockCode) 
+                        VALUES ('Test', 'TEST', 'Test', 'Test', 'Test', 'Test', '', 0, 0, 0, 0, 0, 0, 'Test', 'Test', '', '', datetime('now'), datetime('now'), 0, NULL);
+                        DROP TABLE test_nullable;
+                    ");
+                    logger.LogInformation("Veritabanı test insert başarısız - kolon yapısı uygun");
+                }
+                catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("NOT NULL"))
+                {
+                    logger.LogWarning("HepsiburadaSellerStockCode has NOT NULL constraint, fixing...");
+                    
+                    // Tablo yeniden oluştur
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"
+                            BEGIN TRANSACTION;
+                            
+                            -- Backup data
+                            CREATE TEMP TABLE products_backup AS SELECT * FROM Products;
+                            
+                            -- Drop and recreate table
+                            DROP TABLE Products;
+                            
+                            CREATE TABLE Products (
+                                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                Name TEXT NOT NULL,
+                                SKU TEXT,
+                                Brand TEXT,
+                                Category TEXT,
+                                CategoryId INTEGER,
+                                Description TEXT,
+                                Features TEXT,
+                                ImageUrl TEXT,
+                                Weight DECIMAL(18,2) DEFAULT 0,
+                                Desi DECIMAL(18,2) DEFAULT 0,
+                                Width DECIMAL(18,2) DEFAULT 0,
+                                Height DECIMAL(18,2) DEFAULT 0,
+                                Depth DECIMAL(18,2) DEFAULT 0,
+                                Length DECIMAL(18,2),
+                                WarrantyMonths INTEGER DEFAULT 0,
+                                Material TEXT,
+                                Color TEXT,
+                                EanCode TEXT,
+                                Notes TEXT,
+                                CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                UpdatedDate DATETIME,
+                                IsActive INTEGER DEFAULT 1,
+                                IsArchived INTEGER DEFAULT 0,
+                                TrendyolBarcode TEXT,
+                                HepsiburadaBarcode TEXT,
+                                HepsiburadaSellerStockCode TEXT,
+                                HepsiburadaTedarikBarcode TEXT,
+                                KoctasBarcode TEXT,
+                                KoctasIstanbulBarcode TEXT,
+                                PttAvmBarcode TEXT,
+                                PazaramaBarcode TEXT,
+                                HaceyapiBarcode TEXT,
+                                AmazonBarcode TEXT,
+                                N11CatalogId TEXT,
+                                N11ProductCode TEXT,
+                                SpareBarcode1 TEXT,
+                                SpareBarcode2 TEXT,
+                                SpareBarcode3 TEXT,
+                                SpareBarcode4 TEXT,
+                                LogoBarcodes TEXT,
+                                KoctasEanBarcode TEXT,
+                                KoctasEanIstanbulBarcode TEXT,
+                                PttUrunStokKodu TEXT,
+                                KlozetKanalYapisi TEXT,
+                                KlozetTipi TEXT,
+                                KlozetKapakCinsi TEXT,
+                                KlozetMontajTipi TEXT,
+                                LawaboSuTasmaDeligi TEXT,
+                                LawaboArmaturDeligi TEXT,
+                                LawaboTipi TEXT,
+                                LawaboOzelligi TEXT,
+                                BataryaCikisUcuUzunlugu TEXT,
+                                BataryaYuksekligi TEXT,
+                                KabinTipi TEXT,
+                                ImageUrl1 TEXT,
+                                ImageUrl2 TEXT,
+                                ImageUrl3 TEXT,
+                                ImageUrl4 TEXT,
+                                ImageUrl5 TEXT,
+                                ImageUrl6 TEXT,
+                                ImageUrl7 TEXT,
+                                ImageUrl8 TEXT,
+                                ImageUrl9 TEXT,
+                                ImageUrl10 TEXT,
+                                ImageUrls TEXT,
+                                MarketplaceImageUrls TEXT,
+                                VideoUrls TEXT
+                            );
+                            
+                            -- Restore data with null handling
+                            INSERT INTO Products SELECT 
+                                Id, Name, SKU, Brand, Category, CategoryId,
+                                Description, Features, ImageUrl, Weight, Desi,
+                                Width, Height, Depth, 
+                                COALESCE(Length, 0),
+                                WarrantyMonths, Material, Color,
+                                EanCode, Notes, CreatedDate, UpdatedDate, 
+                                COALESCE(IsActive, 1), 
+                                COALESCE(IsArchived, 0),
+                                COALESCE(TrendyolBarcode, ''),
+                                COALESCE(HepsiburadaBarcode, ''),
+                                COALESCE(HepsiburadaSellerStockCode, ''),
+                                COALESCE(HepsiburadaTedarikBarcode, ''),
+                                COALESCE(KoctasBarcode, ''),
+                                COALESCE(KoctasIstanbulBarcode, ''),
+                                COALESCE(PttAvmBarcode, ''),
+                                COALESCE(PazaramaBarcode, ''),
+                                COALESCE(HaceyapiBarcode, ''),
+                                COALESCE(AmazonBarcode, ''),
+                                COALESCE(N11CatalogId, ''),
+                                COALESCE(N11ProductCode, ''),
+                                COALESCE(SpareBarcode1, ''),
+                                COALESCE(SpareBarcode2, ''),
+                                COALESCE(SpareBarcode3, ''),
+                                COALESCE(SpareBarcode4, ''),
+                                COALESCE(LogoBarcodes, ''),
+                                COALESCE(KoctasEanBarcode, ''),
+                                COALESCE(KoctasEanIstanbulBarcode, ''),
+                                COALESCE(PttUrunStokKodu, ''),
+                                COALESCE(KlozetKanalYapisi, ''),
+                                COALESCE(KlozetTipi, ''),
+                                COALESCE(KlozetKapakCinsi, ''),
+                                COALESCE(KlozetMontajTipi, ''),
+                                COALESCE(LawaboSuTasmaDeligi, ''),
+                                COALESCE(LawaboArmaturDeligi, ''),
+                                COALESCE(LawaboTipi, ''),
+                                COALESCE(LawaboOzelligi, ''),
+                                COALESCE(BataryaCikisUcuUzunlugu, ''),
+                                COALESCE(BataryaYuksekligi, ''),
+                                COALESCE(KabinTipi, ''),
+                                COALESCE(ImageUrl1, ''),
+                                COALESCE(ImageUrl2, ''),
+                                COALESCE(ImageUrl3, ''),
+                                COALESCE(ImageUrl4, ''),
+                                COALESCE(ImageUrl5, ''),
+                                COALESCE(ImageUrl6, ''),
+                                COALESCE(ImageUrl7, ''),
+                                COALESCE(ImageUrl8, ''),
+                                COALESCE(ImageUrl9, ''),
+                                COALESCE(ImageUrl10, ''),
+                                COALESCE(ImageUrls, ''),
+                                COALESCE(MarketplaceImageUrls, ''),
+                                COALESCE(VideoUrls, '')
+                            FROM products_backup;
+                            
+                            -- Drop backup
+                            DROP TABLE products_backup;
+                            
+                            COMMIT;
+                        ");
+                        
+                        logger.LogInformation("Products table recreated with correct nullable constraints");
+                    }
+                    catch (Exception recreateEx)
+                    {
+                        logger.LogError(recreateEx, "Error recreating Products table");
+                        context.Database.ExecuteSqlRaw("ROLLBACK;");
+                        throw;
+                    }
+                }
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: HepsiburadaSellerStockCode"))
+            {
+                logger.LogInformation("HepsiburadaSellerStockCode column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN HepsiburadaSellerStockCode TEXT DEFAULT ''");
+                logger.LogInformation("HepsiburadaSellerStockCode column added to Products table");
+            }
+
+            // N11CatalogId sütunu kontrolü
+            try
+            {
+                var testN11CatalogQuery = context.Database.ExecuteSqlRaw("SELECT N11CatalogId FROM Products LIMIT 1");
+                logger.LogInformation("N11CatalogId column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: N11CatalogId"))
+            {
+                logger.LogInformation("N11CatalogId column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN N11CatalogId TEXT DEFAULT ''");
+                logger.LogInformation("N11CatalogId column added to Products table");
+            }
+
+            // N11ProductCode sütunu kontrolü
+            try
+            {
+                var testN11ProductQuery = context.Database.ExecuteSqlRaw("SELECT N11ProductCode FROM Products LIMIT 1");
+                logger.LogInformation("N11ProductCode column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: N11ProductCode"))
+            {
+                logger.LogInformation("N11ProductCode column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN N11ProductCode TEXT DEFAULT ''");
+                logger.LogInformation("N11ProductCode column added to Products table");
+            }
+
+            // SpareBarcode4 sütunu kontrolü
+            try
+            {
+                var testSpare4Query = context.Database.ExecuteSqlRaw("SELECT SpareBarcode4 FROM Products LIMIT 1");
+                logger.LogInformation("SpareBarcode4 column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: SpareBarcode4"))
+            {
+                logger.LogInformation("SpareBarcode4 column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN SpareBarcode4 TEXT DEFAULT ''");
+                logger.LogInformation("SpareBarcode4 column added to Products table");
+            }
+
+            logger.LogInformation("New barcode columns migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding new barcode columns");
+        }
+
+        // Özel özellikler sütunları kontrolü ve eklenmesi
+        try
+        {
+            // KlozetKanalYapisi sütunu kontrolü
+            try
+            {
+                var testKlozetKanalQuery = context.Database.ExecuteSqlRaw("SELECT KlozetKanalYapisi FROM Products LIMIT 1");
+                logger.LogInformation("KlozetKanalYapisi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KlozetKanalYapisi"))
+            {
+                logger.LogInformation("KlozetKanalYapisi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KlozetKanalYapisi TEXT DEFAULT ''");
+                logger.LogInformation("KlozetKanalYapisi column added to Products table");
+            }
+
+            // KlozetTipi sütunu kontrolü
+            try
+            {
+                var testKlozetTipiQuery = context.Database.ExecuteSqlRaw("SELECT KlozetTipi FROM Products LIMIT 1");
+                logger.LogInformation("KlozetTipi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KlozetTipi"))
+            {
+                logger.LogInformation("KlozetTipi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KlozetTipi TEXT DEFAULT ''");
+                logger.LogInformation("KlozetTipi column added to Products table");
+            }
+
+            // KlozetKapakCinsi sütunu kontrolü
+            try
+            {
+                var testKlozetKapakQuery = context.Database.ExecuteSqlRaw("SELECT KlozetKapakCinsi FROM Products LIMIT 1");
+                logger.LogInformation("KlozetKapakCinsi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KlozetKapakCinsi"))
+            {
+                logger.LogInformation("KlozetKapakCinsi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KlozetKapakCinsi TEXT DEFAULT ''");
+                logger.LogInformation("KlozetKapakCinsi column added to Products table");
+            }
+
+            // KlozetMontajTipi sütunu kontrolü
+            try
+            {
+                var testKlozetMontajQuery = context.Database.ExecuteSqlRaw("SELECT KlozetMontajTipi FROM Products LIMIT 1");
+                logger.LogInformation("KlozetMontajTipi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KlozetMontajTipi"))
+            {
+                logger.LogInformation("KlozetMontajTipi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KlozetMontajTipi TEXT DEFAULT ''");
+                logger.LogInformation("KlozetMontajTipi column added to Products table");
+            }
+
+            // LawaboSuTasmaDeligi sütunu kontrolü
+            try
+            {
+                var testLawaboSuQuery = context.Database.ExecuteSqlRaw("SELECT LawaboSuTasmaDeligi FROM Products LIMIT 1");
+                logger.LogInformation("LawaboSuTasmaDeligi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: LawaboSuTasmaDeligi"))
+            {
+                logger.LogInformation("LawaboSuTasmaDeligi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN LawaboSuTasmaDeligi TEXT DEFAULT ''");
+                logger.LogInformation("LawaboSuTasmaDeligi column added to Products table");
+            }
+
+            // LawaboArmaturDeligi sütunu kontrolü
+            try
+            {
+                var testLawaboArmaturQuery = context.Database.ExecuteSqlRaw("SELECT LawaboArmaturDeligi FROM Products LIMIT 1");
+                logger.LogInformation("LawaboArmaturDeligi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: LawaboArmaturDeligi"))
+            {
+                logger.LogInformation("LawaboArmaturDeligi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN LawaboArmaturDeligi TEXT DEFAULT ''");
+                logger.LogInformation("LawaboArmaturDeligi column added to Products table");
+            }
+
+            // LawaboTipi sütunu kontrolü
+            try
+            {
+                var testLawaboTipiQuery = context.Database.ExecuteSqlRaw("SELECT LawaboTipi FROM Products LIMIT 1");
+                logger.LogInformation("LawaboTipi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: LawaboTipi"))
+            {
+                logger.LogInformation("LawaboTipi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN LawaboTipi TEXT DEFAULT ''");
+                logger.LogInformation("LawaboTipi column added to Products table");
+            }
+
+            // LawaboOzelligi sütunu kontrolü
+            try
+            {
+                var testLawaboOzellikQuery = context.Database.ExecuteSqlRaw("SELECT LawaboOzelligi FROM Products LIMIT 1");
+                logger.LogInformation("LawaboOzelligi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: LawaboOzelligi"))
+            {
+                logger.LogInformation("LawaboOzelligi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN LawaboOzelligi TEXT DEFAULT ''");
+                logger.LogInformation("LawaboOzelligi column added to Products table");
+            }
+
+            // BataryaCikisUcuUzunlugu sütunu kontrolü
+            try
+            {
+                var testBataryaCikisQuery = context.Database.ExecuteSqlRaw("SELECT BataryaCikisUcuUzunlugu FROM Products LIMIT 1");
+                logger.LogInformation("BataryaCikisUcuUzunlugu column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: BataryaCikisUcuUzunlugu"))
+            {
+                logger.LogInformation("BataryaCikisUcuUzunlugu column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN BataryaCikisUcuUzunlugu TEXT DEFAULT ''");
+                logger.LogInformation("BataryaCikisUcuUzunlugu column added to Products table");
+            }
+
+            // BataryaYuksekligi sütunu kontrolü
+            try
+            {
+                var testBataryaYukseklikQuery = context.Database.ExecuteSqlRaw("SELECT BataryaYuksekligi FROM Products LIMIT 1");
+                logger.LogInformation("BataryaYuksekligi column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: BataryaYuksekligi"))
+            {
+                logger.LogInformation("BataryaYuksekligi column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN BataryaYuksekligi TEXT DEFAULT ''");
+                logger.LogInformation("BataryaYuksekligi column added to Products table");
+            }
+
+            logger.LogInformation("Special features columns migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding special features columns");
+        }
+
+        // Length sütunu kontrolü ve eklenmesi
+        try
+        {
+            try
+            {
+                var testLengthQuery = context.Database.ExecuteSqlRaw("SELECT Length FROM Products LIMIT 1");
+                logger.LogInformation("Length column already exists");
+                
+                // Length sütunu için NULL değerleri 0 olarak ayarla
+                try
+                {
+                    context.Database.ExecuteSqlRaw("UPDATE Products SET Length = 0 WHERE Length IS NULL");
+                    logger.LogInformation("Updated NULL Length values to 0");
+                }
+                catch (Microsoft.Data.Sqlite.SqliteException ex)
+                {
+                    logger.LogWarning($"Could not update Length values: {ex.Message}");
+                }
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: Length"))
+            {
+                logger.LogInformation("Length column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN Length DECIMAL(18,2) DEFAULT 0");
+                logger.LogInformation("Length column added to Products table");
+            }
+
+            logger.LogInformation("Length column migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding Length column");
+        }
+
+        // Yeni barkod sütunları kontrolü ve eklenmesi
+        try
+        {
+            // KoctasEanBarcode sütunu kontrolü
+            try
+            {
+                var testKoctasEanBarcodeQuery = context.Database.ExecuteSqlRaw("SELECT KoctasEanBarcode FROM Products LIMIT 1");
+                logger.LogInformation("KoctasEanBarcode column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KoctasEanBarcode"))
+            {
+                logger.LogInformation("KoctasEanBarcode column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KoctasEanBarcode TEXT DEFAULT ''");
+                logger.LogInformation("KoctasEanBarcode column added to Products table");
+            }
+
+            // KoctasEanIstanbulBarcode sütunu kontrolü
+            try
+            {
+                var testKoctasEanIstanbulBarcodeQuery = context.Database.ExecuteSqlRaw("SELECT KoctasEanIstanbulBarcode FROM Products LIMIT 1");
+                logger.LogInformation("KoctasEanIstanbulBarcode column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: KoctasEanIstanbulBarcode"))
+            {
+                logger.LogInformation("KoctasEanIstanbulBarcode column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN KoctasEanIstanbulBarcode TEXT DEFAULT ''");
+                logger.LogInformation("KoctasEanIstanbulBarcode column added to Products table");
+            }
+
+            // PttUrunStokKodu sütunu kontrolü
+            try
+            {
+                var testPttUrunStokKoduQuery = context.Database.ExecuteSqlRaw("SELECT PttUrunStokKodu FROM Products LIMIT 1");
+                logger.LogInformation("PttUrunStokKodu column already exists");
+            }
+            catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("no such column: PttUrunStokKodu"))
+            {
+                logger.LogInformation("PttUrunStokKodu column not found, adding...");
+                context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN PttUrunStokKodu TEXT DEFAULT ''");
+                logger.LogInformation("PttUrunStokKodu column added to Products table");
+            }
+
+            logger.LogInformation("New barcode columns migration completed");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error checking/adding new barcode columns");
+        }
+
+        // String alanlarındaki NOT NULL constraint'lerini çözmek için güncelleme
+        try
+        {
+            // Test if we need to fix null constraints by checking if any field is null
+            logger.LogInformation("Checking for null string fields...");
+
+            // Mevcut ürün sayısını özel özellik sütunları eklendikten sonra kontrol et
+            var productCount = context.Products.Count();
+            logger.LogInformation("Current product count: {ProductCount}", productCount);
+
+            // Mevcut ürünlerde null olan alanları boş string ile güncelle
+            var products = context.Products.ToList();
+            bool hasUpdates = false;
+
+            foreach (var product in products)
+            {
+                if (ValidateAndFixNullFields(product))
+                {
+                    hasUpdates = true;
+                }
+            }
+
+            if (hasUpdates)
+            {
+                context.SaveChanges();
+                logger.LogInformation("Null string fields updated to empty strings");
+            }
+            else
+            {
+                logger.LogInformation("No null string fields found, update not needed");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating null string fields");
+        }
+
+        // Kategori başlangıç verilerini kontrol et
+        try
+        {
+            logger.LogInformation("Starting category initialization...");
+
+            var categoryRepository = scope.ServiceProvider.GetRequiredService<ICategoryRepository>();
+
+            // Mevcut kategorileri kontrol et
+            var existingCategories = await categoryRepository.GetAllCategoriesAsync();
+            logger.LogInformation("Current category count: {CategoryCount}", existingCategories.Count);
+
+            // Eğer hiç kategori yoksa, yeni kategori sistemini oluştur
+            if (existingCategories.Count == 0)
+            {
+                logger.LogInformation("Creating new category system...");
+                var defaultCategories = new[]
+                {
+                    new { Name = "Ara Musluk", Description = "Ara musluk ve sistemleri" },
+                    new { Name = "Banyo Aksesuar", Description = "Banyo için çeşitli aksesuar ürünleri" },
+                    new { Name = "Banyo Dolapları", Description = "Banyo mobilyaları ve dolap sistemleri" },
+                    new { Name = "Batarya (Banyo)", Description = "Banyo için batarya ve musluk sistemleri" },
+                    new { Name = "Batarya (Çanak Lavabo)", Description = "Çanak lavabo için özel batarya sistemleri" },
+                    new { Name = "Batarya (Eviye)", Description = "Eviye için batarya ve musluk sistemleri" },
+                    new { Name = "Batarya (Lavabo)", Description = "Lavabo için batarya ve musluk sistemleri" },
+                    new { Name = "Batarya Set", Description = "Batarya set ve kombinasyonları" },
+                    new { Name = "Çamaşır Musluğu", Description = "Çamaşır için özel musluk sistemleri" },
+                    new { Name = "Diğer", Description = "Diğer kategorilere girmeyen ürünler" },
+                    new { Name = "Duş Sistemleri", Description = "Duş kabini ve duş sistemleri" },
+                    new { Name = "Gömme Rezervuar", Description = "Gömme rezervuar sistemleri" },
+                    new { Name = "Gömme+Klozet Set", Description = "Gömme rezervuar ve klozet kombinasyonları" },
+                    new { Name = "Hela Taşı", Description = "Hela taşı ve benzeri ürünler" },
+                    new { Name = "Hırdavat ve Tesisat", Description = "Tesisat hırdavat malzemeleri" },
+                    new { Name = "Klozet", Description = "Standart klozet sistemleri" },
+                    new { Name = "Klozet Kapağı", Description = "Klozet kapağı ve aksesuarları" },
+                    new { Name = "Lavabo", Description = "Lavabo ve lavabo sistemleri" },
+                    new { Name = "Lavabo Sifonları (Pop-Up)", Description = "Pop-up lavabo sifonları" },
+                    new { Name = "Mutfak Eviye Lavabosu", Description = "Mutfak eviye lavabo sistemleri" },
+                    new { Name = "Pisuvar", Description = "Pisuvar ve pisuvar sistemleri" },
+                    new { Name = "Rezervuar İç Takım", Description = "Rezervuar iç takım ve parçaları" },
+                    new { Name = "Seramik", Description = "Seramik ürünler ve malzemeler" },
+                    new { Name = "Taharet Musluğu", Description = "Taharet musluğu ve sistemleri" },
+                    new { Name = "Toz Yapıştırıcı", Description = "Toz yapıştırıcı ve kimyasal malzemeler" }
+                };
+
+                foreach (var categoryData in defaultCategories)
+                {
+                    var category = new Category { Name = categoryData.Name, Description = categoryData.Description, IsActive = true };
+                    await categoryRepository.AddCategoryAsync(category);
+                    logger.LogInformation("Category created: {CategoryName}", categoryData.Name);
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during category initialization");
+        }
+
+    }
+    catch (Exception ex)
+    {
+        logger.LogError($"Database initialization error: {ex.Message}");
+    }
+}
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseStatusCodePagesWithReExecute("/Error/{0}");
+    app.UseHsts();
+    // Only use compression in production
+    app.UseResponseCompression();
+}
+else
+{
+    // Development environment - no compression to avoid browser refresh issues
+    app.UseDeveloperExceptionPage();
+}
+app.UseResponseCaching();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            // Development environment - disable cache for easier debugging
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Context.Response.Headers.Append("Pragma", "no-cache");
+            ctx.Context.Response.Headers.Append("Expires", "0");
+        }
+        else
+        {
+            // Production environment - cache static files for 30 days
+            ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+        }
+    }
+});
+
+// 🛡️ Enhanced Security Headers for Production
+if (!app.Environment.IsDevelopment())
+{
+    // Advanced HSTS configuration
+    app.UseHsts();
+    
+    // Comprehensive security headers middleware
+    app.Use(async (context, next) =>
+    {
+        // Essential security headers
+        context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
+        context.Response.Headers.TryAdd("X-Frame-Options", "DENY");
+        context.Response.Headers.TryAdd("X-XSS-Protection", "1; mode=block");
+        context.Response.Headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+        context.Response.Headers.TryAdd("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+        
+        // Content Security Policy - Enhanced for production
+        context.Response.Headers.TryAdd("Content-Security-Policy",
+            "default-src 'self'; " +
+            "style-src 'self' 'unsafe-inline' cdnjs.cloudflare.com fonts.googleapis.com; " +
+            "script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; " +
+            "img-src 'self' data: https: blob: *.dsmcdn.com; " +
+            "media-src 'self' https: data: blob: *.dsmcdn.com *.youtube.com *.ytimg.com *.vimeo.com *.vimeocdn.com; " +
+            "font-src 'self' cdnjs.cloudflare.com fonts.gstatic.com; " +
+            "connect-src 'self'; " +
+            "frame-src 'self' https://www.youtube.com https://player.vimeo.com; " +
+            "object-src 'none'; " +
+            "base-uri 'self'; " +
+            "form-action 'self'");
+        
+        await next();
+    });
+}
+
+app.UseRouting();
+
+// Add health checks endpoint for production monitoring
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                duration = entry.Value.Duration.TotalMilliseconds
+            }),
+            totalDuration = report.TotalDuration.TotalMilliseconds
+        };
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+    }
+});
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Product}/{action=Index}/{id?}");
+
+// API endpoints for JavaScript - OPTIMIZED for performance
+app.MapGet("/api/products", async (HttpContext context, [FromServices] IProductService productService) =>
+{
+    // Extract query parameters manually for C# 10 compatibility
+    int page = context.Request.Query.ContainsKey("page") ? 
+        int.Parse(context.Request.Query["page"]!) : 1;
+    int pageSize = context.Request.Query.ContainsKey("pageSize") ? 
+        int.Parse(context.Request.Query["pageSize"]!) : 50;
+        
+    // Return paginated results instead of all products for better performance
+    return await productService.SearchProductsAsync("", "", "", page, pageSize);
+});
+
+app.MapGet("/api/products/count", async ([FromServices] IProductService productService) =>
+{
+    // Separate endpoint for count to avoid loading all products
+    return await productService.GetProductCountAsync();
+});
+
+// Run the application on port 5000 for Docker deployment
+app.Run("http://0.0.0.0:5000");
+
+static bool ValidateAndFixNullFields(Product product)
+{
+    // Use centralized NullSafetyUtils to eliminate all duplicate null checks
+    return NullSafetyUtils.EnsureProductNotNull(product);
+}

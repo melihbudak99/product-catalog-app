@@ -1,0 +1,88 @@
+@model product_catalog_app.src.models.Product
+
+<!-- Fiziksel Özellikler -->
+<div class="form-section collapsible" id="physical-section">
+    <div class="section-header">
+        <h2><i class="fas fa-ruler-combined"></i> Fiziksel Özellikler <i class="fas fa-chevron-down toggle-icon"></i></h2>
+    </div>
+    
+    <div class="form-content collapsible-content">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Weight">Ağırlık (kg)</label>
+                <input type="number" id="Weight" name="Weight" class="form-control" 
+                       placeholder="0.00" 
+                       value="@Model.Weight"
+                       step="0.01" min="0" />
+                <small class="form-help">Ürün ağırlığı (kg)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="Desi">Desi</label>
+                <input type="number" id="Desi" name="Desi" class="form-control" 
+                       placeholder="0" 
+                       value="@(Model.Desi == 0 ? "" : Model.Desi.ToString())"
+                       step="1" min="0" />
+                <small class="form-help">Kargo desi değeri (isteğe bağlı)</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Width">Genişlik (cm)</label>
+                <input type="number" id="Width" name="Width" class="form-control" 
+                       placeholder="0.00" 
+                       value="@Model.Width"
+                       step="0.01" min="0" />
+                <small class="form-help">Ürün genişliği (cm)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="Height">Yükseklik (cm)</label>
+                <input type="number" id="Height" name="Height" class="form-control" 
+                       placeholder="0.00" 
+                       value="@Model.Height"
+                       step="0.01" min="0" />
+                <small class="form-help">Ürün yüksekliği (cm)</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Depth">En (cm)</label>
+                <input type="number" id="Depth" name="Depth" class="form-control" 
+                       placeholder="0.00" 
+                       value="@Model.Depth"
+                       step="0.01" min="0" />
+                <small class="form-help">Ürün eni (cm)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="WarrantyMonths">Garanti Süresi (Ay)</label>
+                <input type="number" id="WarrantyMonths" name="WarrantyMonths" class="form-control" 
+                       placeholder="12" 
+                       value="@Model.WarrantyMonths"
+                       min="0" max="120" />
+                <small class="form-help">Garanti süresi (ay)</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="Material">Materyal</label>
+                <input type="text" id="Material" name="Material" class="form-control" 
+                       placeholder="Plastik, Metal, Ahşap vb." 
+                       value="@Model.Material" />
+                <small class="form-help">Ürün materyali</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="Color">Renk</label>
+                <input type="text" id="Color" name="Color" class="form-control" 
+                       placeholder="Siyah, Beyaz, Mavi vb." 
+                       value="@Model.Color" />
+                <small class="form-help">Ürün rengi</small>
+            </div>
+        </div>
+    </div>
+</div>

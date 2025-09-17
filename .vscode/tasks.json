@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Product Catalog App",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/product-catalog-app2"
+			},
+			"group": "test",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Product Catalog App",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"run"
+			],
+			"isBackground": true,
+			"group": "test"
+		}
+	]
+}

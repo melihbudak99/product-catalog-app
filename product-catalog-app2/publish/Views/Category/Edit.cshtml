@@ -1,0 +1,629 @@
+@model product_catalog_app.src.models.Category
+@{
+    ViewData["Title"] = "Kategori Düzenle";
+    
+    // Header için parametreler
+    ViewBag.HeaderType = "default";
+    ViewBag.HeaderTitle = "Kategori Düzenle";
+    ViewBag.HeaderSubtitle = $"'{Model.Name}' kategorisini düzenle";
+    ViewBag.HeaderIcon = "fas fa-edit";
+    ViewBag.ShowBackButton = true;
+    ViewBag.BackUrl = Url.Action("Index", "Category");
+}
+
+<div class="container">
+    <div class="edit-category-page">
+    
+    <!-- Ortak Header Component -->
+    @await Html.PartialAsync("_PageHeader")
+
+    <div class="edit-content">
+        <div class="edit-form-section">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-info-circle"></i> Kategori Bilgileri</h2>
+                </div>
+                <form asp-action="Edit" method="post" class="category-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="IsActive" />
+                    <input type="hidden" asp-for="CreatedDate" />
+                    
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label required">Kategori Adı</label>
+                        <input asp-for="Name" class="form-control" placeholder="Kategori adını girin" maxlength="100" required />
+                        <span asp-validation-for="Name" class="validation-error"></span>
+                        <small class="form-help">Kategori adı benzersiz olmalı ve açıklayıcı olmalı.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description" class="form-label">Açıklama</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Kategori açıklamasını girin..." maxlength="500"></textarea>
+                        <span asp-validation-for="Description" class="validation-error"></span>
+                        <small class="form-help">İsteğe bağlı: Kategoriyi daha iyi tanımlayan bir açıklama ekleyebilirsiniz.</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Değişiklikleri Kaydet
+                        </button>
+                        <a href="@Url.Action("Index", "Category")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Geri Dön
+                        </a>
+                        <button type="button" class="btn btn-danger" onclick="showDeleteConfirm()">
+                            <i class="fas fa-trash"></i> Kategoriyi Sil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-card">
+                <h3><i class="fas fa-chart-bar"></i> Kategori İstatistikleri</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@(ViewBag.ProductCount ?? 0)</div>
+                            <div class="stat-label">Ürün Sayısı</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@Model.CreatedDate.ToTurkeyTimeString("dd.MM.yyyy")</div>
+                            <div class="stat-label">Oluşturulma</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">@Model.UpdatedDate.ToTurkeyTimeString("dd.MM.yyyy")</div>
+                            <div class="stat-label">Son Güncelleme</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h3><i class="fas fa-exclamation-triangle"></i> Önemli Notlar</h3>
+                <ul class="notice-list">
+                    <li>
+                        <i class="fas fa-info-circle text-info"></i>
+                        Kategori adı değiştirildiğinde, bu kategoriyi kullanan tüm ürünler etkilenir.
+                    </li>
+                    <li>
+                        <i class="fas fa-warning text-warning"></i>
+                        @if (ViewBag.ProductCount != null && ViewBag.ProductCount > 0)
+                        {
+                            <span>Bu kategori @ViewBag.ProductCount ürün tarafından kullanılıyor. Silmek için önce ürünleri başka kategoriye taşıyın.</span>
+                        }
+                        else
+                        {
+                            <span>Bu kategori hiçbir ürün tarafından kullanılmıyor, güvenle silebilirsiniz.</span>
+                        }
+                    </li>
+                    <li>
+                        <i class="fas fa-sync-alt text-success"></i>
+                        Değişiklikler anında tüm sistemde geçerli olacaktır.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <h3><i class="fas fa-eye"></i> Hızlı Erişim</h3>
+                <div class="quick-actions">
+                    <a href="@Url.Action("Index", "Product", new { category = Model.Name })" class="quick-action-btn">
+                        <i class="fas fa-box"></i>
+                        <span>Bu Kategorideki Ürünler</span>
+                    </a>
+                    <a href="@Url.Action("Create", "Category")" class="quick-action-btn">
+                        <i class="fas fa-plus"></i>
+                        <span>Yeni Kategori Ekle</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header danger">
+            <h3><i class="fas fa-exclamation-triangle"></i> Kategori Sil</h3>
+            <button type="button" class="close-btn" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p><strong>@Model.Name</strong> kategorisini silmek istediğinizden emin misiniz?</p>
+            @if (ViewBag.ProductCount != null && ViewBag.ProductCount > 0)
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Bu kategori @ViewBag.ProductCount ürün tarafından kullanılıyor. Silmek için önce ürünleri başka kategoriye taşıyın.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Bu işlem geri alınamaz.
+                </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">İptal</button>
+            @if (ViewBag.ProductCount == null || ViewBag.ProductCount == 0)
+            {
+                <a href="@Url.Action("Delete", "Category", new { id = Model.Id })" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Evet, Sil
+                </a>
+            }
+            else
+            {
+                <button type="button" class="btn btn-danger" disabled>
+                    <i class="fas fa-lock"></i> Silinemez
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+/* Edit Category Page Styles */
+.edit-category-page {
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: calc(100vh - 120px);
+}
+
+/* Category Edit Page Specific Styles */
+
+.edit-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.edit-form-section {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+
+.form-card {
+    height: 100%;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 25px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.form-header h2 {
+    margin: 0;
+    font-size: 1.4em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-form {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95em;
+}
+
+.form-label.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.validation-error {
+    color: #dc3545;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-help {
+    color: #6c757d;
+    font-size: 0.85em;
+    margin-top: 5px;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: var(--secondary-color);
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: var(--white);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(250, 112, 154, 0.4);
+}
+
+.btn-danger:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.info-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.2em;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.notice-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.notice-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    line-height: 1.5;
+}
+
+.notice-list li:last-child {
+    margin-bottom: 0;
+}
+
+.text-info { color: #17a2b8; }
+.text-warning { color: #ffc107; }
+.text-success { color: #28a745; }
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #495057;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.quick-action-btn:hover {
+    background: #e9ecef;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    text-decoration: none;
+    color: #495057;
+}
+
+.quick-action-btn i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+@@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    padding: 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 16px 16px 0 0;
+}
+
+.modal-header.danger {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body p {
+    margin-bottom: 20px;
+    font-size: 1.1em;
+    line-height: 1.6;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #b8daff;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+/* Responsive */
+@@media (max-width: 768px) {
+    .edit-category-page {
+        padding: 15px;
+    }
+    
+    .edit-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+function showDeleteConfirm() {
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

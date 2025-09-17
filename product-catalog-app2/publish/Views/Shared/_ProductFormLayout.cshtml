@@ -1,0 +1,61 @@
+@model product_catalog_app.src.models.Product
+
+@{
+    // Form parametreleri
+    var isEditMode = ViewBag.IsEditMode is bool ? (bool)ViewBag.IsEditMode : false;
+    var actionUrl = isEditMode ? "EditProduct" : "CreateProduct";
+    var submitText = isEditMode ? "Değişiklikleri Kaydet" : "Ürünü Kaydet";
+}
+
+<div class="container">
+    <!-- Ortak Header Component -->
+    @await Html.PartialAsync("_PageHeader")
+    
+    <div class="product-form-container">
+
+    <form asp-action="@actionUrl" method="post" id="productForm" class="product-form" novalidate>
+        @Html.AntiForgeryToken()
+        
+        @if (isEditMode)
+        {
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreatedDate" />
+        }
+
+        <!-- Temel Bilgiler -->
+        @await Html.PartialAsync("_ProductFormBasicInfo", Model)
+
+        <!-- Açıklama ve İçerik -->
+        @await Html.PartialAsync("_ProductFormDescription", Model)
+
+        <!-- Ürün Medyaları -->
+        @await Html.PartialAsync("_ProductFormMedia", Model)
+
+        <!-- Fiziksel Özellikler -->
+        @await Html.PartialAsync("_ProductFormPhysical", Model)
+
+        <!-- Ürüne Özel Özellikler -->
+        @await Html.PartialAsync("_ProductFormSpecialFeatures", Model)
+
+        <!-- Pazaryeri Barkodları -->
+        @await Html.PartialAsync("_ProductFormBarcodes", Model)
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="/" class="btn btn-home">
+                <i class="fas fa-home"></i>
+                Anasayfa
+            </a>
+            <button type="submit" class="btn btn-dark save-tooltip" title="Kaydetmek için Ctrl+S kısayolunu da kullanabilirsiniz" data-tooltip="Ctrl+S ile hızlı kaydet">
+                <i class="fas fa-save"></i>
+                @submitText
+                <small class="keyboard-shortcut">(Ctrl+S)</small>
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                İptal
+            </a>
+        </div>
+    </form>
+    </div>
+</div>

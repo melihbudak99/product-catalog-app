@@ -1,0 +1,196 @@
+@model dynamic
+
+@{
+    // Header parametreleri - Safe type checking
+    var title = ViewBag.HeaderTitle as string ?? "Sayfa Başlığı";
+    var subtitle = ViewBag.HeaderSubtitle as string ?? "";
+    var icon = ViewBag.HeaderIcon as string ?? "fas fa-home";
+    var stats = ViewBag.HeaderStats;
+    var headerType = ViewBag.HeaderType as string ?? "default"; // default, product-form, category-management, xml-manager
+    var showBackButton = ViewBag.ShowBackButton is bool ? (bool)ViewBag.ShowBackButton : false;
+    var backUrl = ViewBag.BackUrl as string ?? "/";
+    var actionButtons = ViewBag.ActionButtons as string;
+}
+
+@if (headerType == "product-form")
+{
+    <!-- Product Form Header -->
+    <div class="common-header product-form-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="@icon"></i>
+                @title
+            </h1>
+            @if (!string.IsNullOrEmpty(subtitle))
+            {
+                <p class="page-subtitle">@subtitle</p>
+            }
+        </div>
+    </div>
+}
+else if (headerType == "category-management")
+{
+    <!-- Category Management Premium Header -->
+    <div class="common-header premium-header">
+        <div class="header-backdrop"></div>
+        <div class="header-content">
+            <div class="header-main">
+                <div class="header-title-section">
+                    <div class="title-container">
+                        <h1 class="main-title">
+                            <i class="@icon premium-icon"></i>
+                            @title
+                        </h1>
+                        @if (!string.IsNullOrEmpty(subtitle))
+                        {
+                            <p class="subtitle">@subtitle</p>
+                        }
+                    </div>
+                </div>
+                @if (stats != null)
+                {
+                    <div class="header-stats-grid">
+                        @foreach (var stat in stats)
+                        {
+                            <div class="stat-card @stat.Type">
+                                <div class="stat-icon-container">
+                                    <i class="@stat.Icon"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">@stat.Value</div>
+                                    <div class="stat-label">@stat.Label</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else if (headerType == "premium")
+{
+    <!-- Premium Header for Product Catalog Homepage -->
+    <div class="common-header premium-header">
+        <div class="header-backdrop"></div>
+        <div class="header-content">
+            <div class="header-main">
+                <div class="header-title-section">
+                    <div class="title-container">
+                        <h1 class="main-title">
+                            <i class="@icon premium-icon"></i>
+                            @title
+                        </h1>
+                        @if (!string.IsNullOrEmpty(subtitle))
+                        {
+                            <p class="subtitle">@subtitle</p>
+                        }
+                    </div>
+                </div>
+                @if (stats != null)
+                {
+                    <div class="header-stats-grid">
+                        @foreach (var stat in stats)
+                        {
+                            <div class="stat-card @stat.Type">
+                                <div class="stat-icon-container">
+                                    <i class="@stat.Icon"></i>
+                                </div>
+                                <div class="stat-info">
+                                    <div class="stat-number">@stat.Value</div>
+                                    <div class="stat-label">@stat.Label</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else if (headerType == "xml-manager")
+{
+    <!-- XML Manager Page Header -->
+    <div class="common-header page-header">
+        <div class="header-content">
+            <h1><i class="@icon"></i> @title</h1>
+            @if (!string.IsNullOrEmpty(subtitle))
+            {
+                <p>@subtitle</p>
+            }
+        </div>
+        @if (showBackButton || actionButtons != null)
+        {
+            <div class="header-actions">
+                @if (showBackButton)
+                {
+                    <a href="@backUrl" class="btn btn-back">
+                        <i class="fas fa-arrow-left"></i> Geri
+                    </a>
+                }
+                @if (actionButtons != null)
+                {
+                    @Html.Raw(actionButtons)
+                }
+            </div>
+        }
+    </div>
+}
+else if (headerType == "product-details")
+{
+    <!-- Product Details Header -->
+    <div class="common-header product-header">
+        <div class="header-content">
+            <div class="product-title-section">
+                <h1 class="product-title">@title</h1>
+                @if (!string.IsNullOrEmpty(subtitle))
+                {
+                    <div class="product-badges">
+                        @Html.Raw(subtitle)
+                    </div>
+                }
+            </div>
+            @if (actionButtons != null)
+            {
+                <div class="action-buttons">
+                    @Html.Raw(actionButtons)
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <!-- Default Header -->
+    <div class="common-header default-header">
+        <div class="header-content">
+            <div class="header-main">
+                <div class="header-title-section">
+                    <h1 class="page-title">
+                        <i class="@icon"></i>
+                        @title
+                    </h1>
+                    @if (!string.IsNullOrEmpty(subtitle))
+                    {
+                        <p class="page-subtitle">@subtitle</p>
+                    }
+                </div>
+                @if (showBackButton || actionButtons != null)
+                {
+                    <div class="header-actions">
+                        @if (showBackButton)
+                        {
+                            <a href="@backUrl" class="btn btn-back">
+                                <i class="fas fa-arrow-left"></i> Geri
+                            </a>
+                        }
+                        @if (actionButtons != null)
+                        {
+                            @Html.Raw(actionButtons)
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
